@@ -92,6 +92,8 @@ npm run dev      # http://localhost:5173
 
 Démo en ligne : **<https://labo.bissestudio.ch/>**.
 
+Présenté sur le site du studio : <https://bissestudio.ch/open-source/#hygropoint>.
+
 Sous Windows, `demarrer.bat` fait la même chose en double-clic (installation si
 besoin, puis ouverture du navigateur).
 
