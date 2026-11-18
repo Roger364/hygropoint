@@ -1,0 +1,29 @@
+# Normalisation des fins de ligne et des fichiers binaires.
+# Objectif : un dépôt cohérent quel que soit le système (Windows, macOS, Linux).
+* text=auto eol=lf
+
+# Scripts Windows : doivent conserver leurs fins de ligne CRLF pour cmd.exe.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Fichiers binaires : jamais de conversion de fin de ligne ni de diff textuel.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.bmp binary
+*.avif binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.otf binary
+*.eot binary
+*.pdf binary
+*.zip binary
+*.gz binary
+*.bundle binary
+
+# Verrouillage : traité comme du texte, mais exclu des statistiques de diff.
+package-lock.json linguist-generated=true -diff

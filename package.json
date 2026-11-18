@@ -4,6 +4,15 @@
   "version": "1.0.0",
   "description": "HygroPoint — estimation de l'humidité relative de l'air à un point précis : 24 h passées, maintenant, 72 h à venir, calée sur les mesures des stations météo proches.",
   "type": "module",
+  "license": "MIT",
+  "author": "Ro (Bisse Studio)",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Roger364/hygropoint.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Roger364/hygropoint/issues"
+  },
   "engines": {
     "node": ">=20.19"
   },
