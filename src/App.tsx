@@ -239,6 +239,14 @@ export default function App() {
       </div>
 
       <div className="relative mx-auto max-w-7xl px-4 pb-14 pt-5 sm:px-6">
+        {/* Bandeau expérience technique */}
+        <div className="mb-4 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-2 text-sm text-amber-200">
+          <span className="font-semibold">Expérience technique</span> — estimation indicative de l&apos;humidité relative.
+          &nbsp;·&nbsp;
+          <a href="#sources" className="underline hover:text-amber-100">Sources de données</a>
+          &nbsp;·&nbsp;
+          <span className="text-amber-300/80">Vos coordonnées sont envoyées aux services météo listés ci-dessous.</span>
+        </div>
         <header className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-center gap-3">
             <div
@@ -448,7 +456,7 @@ export default function App() {
           )}
         </main>
 
-        <footer className="mt-10 text-center text-[11px] leading-relaxed text-slate-400">
+        <footer id="sources" className="mt-10 text-center text-[11px] leading-relaxed text-slate-400">
           HygroPoint · Modèles : Open-Meteo (CC BY 4.0) · Mesures : METAR via Iowa Environmental Mesonet · Lieux : Photon /
           OpenStreetMap · Fonds de carte : © OpenStreetMap contributors · Estimation indicative
         </footer>

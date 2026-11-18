@@ -1,0 +1,11 @@
+# Cloudflare Pages headers
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: geolocation=(self)
+  X-Robots-Tag: noindex
+  Content-Security-Policy: default-src 'self'; connect-src 'self' https://api.open-meteo.com https://geocoding-api.open-meteo.com https://mesonet.agron.iastate.edu https://photon.komoot.io https://api.bigdatacloud.net https://overpass-api.de https://overpass.kumi.systems; img-src 'self' data: https://tile.openstreetmap.org; style-src 'unsafe-inline'; script-src 'unsafe-inline'
+
+# Map tiles (OSM)
+https://tile.openstreetmap.org/*
+  Access-Control-Allow-Origin: *
