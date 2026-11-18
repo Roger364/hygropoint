@@ -53,7 +53,7 @@ changer d'échelle recalcule l'affichage sans nouvelle requête réseau.
 | [Photon (komoot)](https://photon.komoot.io/) · OpenStreetMap | Recherche de lieux, géocodage inverse | ODbL (© contributeurs OpenStreetMap) |
 | [BigDataCloud](https://www.bigdatacloud.net/) | Géocodage inverse de secours | Service public gratuit, sans clé |
 | [Overpass API](https://overpass-api.de/) | Plans d'eau et forêts (OSM) | ODbL, serveurs publics à ménager |
-| Esri World Imagery · OpenStreetMap | Fonds de carte | © Esri, © contributeurs OpenStreetMap |
+| [OpenStreetMap](https://www.openstreetmap.org/) | Fonds de carte (tuiles raster) | © contributeurs OpenStreetMap ; données sous ODbL |
 
 L'estimation reste **indicative** : elle ne remplace ni un hygromètre, ni un
 bulletin officiel.

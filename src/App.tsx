@@ -450,7 +450,7 @@ export default function App() {
 
         <footer className="mt-10 text-center text-[11px] leading-relaxed text-slate-400">
           HygroPoint · Modèles : Open-Meteo (CC BY 4.0) · Mesures : METAR via Iowa Environmental Mesonet · Lieux : Photon /
-          OpenStreetMap · Fonds de carte : OpenStreetMap, Esri · Estimation indicative
+          OpenStreetMap · Fonds de carte : © OpenStreetMap contributors · Estimation indicative
         </footer>
       </div>
     </div>

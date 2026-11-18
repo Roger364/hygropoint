@@ -4,7 +4,6 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import type { StationSummary } from "../lib/estimate";
 import { fmtNum } from "../lib/format";
-import { cn } from "../utils/cn";
 
 interface Props {
   lat: number;
@@ -13,45 +12,15 @@ interface Props {
   onPick: (lat: number, lon: number) => void;
 }
 
-type MapStyle = "streets" | "satellite" | "dark";
-
-interface LayerDef {
-  label: string;
-  tiles: { url: string; maxNativeZoom: number; maxZoom?: number }[];
-  credit: { text: string; href: string };
-}
-
-const ESRI_SERVER = "https://server.arcgisonline.com/ArcGIS/rest/services";
-const ESRI_CANVAS = "https://services.arcgisonline.com/arcgis/rest/services/Canvas";
 const MAX_ZOOM = 19;
 
-// Fonds sans clé d'API. Les fonds Esri sans libellés reçoivent une couche de noms par-dessus.
-const LAYERS: Record<MapStyle, LayerDef> = {
-  streets: {
-    label: "Plan",
-    tiles: [{ url: "https://tile.openstreetmap.org/{z}/{x}/{y}.png", maxNativeZoom: 19 }],
-    credit: { text: "© OpenStreetMap", href: "https://www.openstreetmap.org/copyright" },
-  },
-  satellite: {
-    label: "Satellite",
-    tiles: [
-      { url: `${ESRI_SERVER}/World_Imagery/MapServer/tile/{z}/{y}/{x}`, maxNativeZoom: 17 },
-      {
-        url: `${ESRI_SERVER}/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}`,
-        maxNativeZoom: 13,
-        maxZoom: 15,
-      },
-    ],
-    credit: { text: "© Esri, Maxar", href: "https://www.esri.com/" },
-  },
-  dark: {
-    label: "Sombre",
-    tiles: [
-      { url: `${ESRI_CANVAS}/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}`, maxNativeZoom: 16 },
-      { url: `${ESRI_CANVAS}/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}`, maxNativeZoom: 16 },
-    ],
-    credit: { text: "© Esri", href: "https://www.esri.com/" },
-  },
+// Fond unique, sans clé d'API : les tuiles OpenStreetMap. Les fonds commerciaux
+// (satellite, sombre) ont été retirés : leurs conditions d'usage ne sont pas
+// compatibles avec la redistribution du projet.
+const OSM_TILES = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
+const OSM_CREDIT = {
+  text: "© OpenStreetMap contributors",
+  href: "https://www.openstreetmap.org/copyright",
 };
 
 // Repère dont la pointe coïncide exactement avec le point désigné.
@@ -82,7 +51,6 @@ const mediaMatches = (query: string): boolean =>
 
 function MapPicker({ lat, lon, stations, onPick }: Props) {
   const [map, setMap] = useState<L.Map | null>(null);
-  const [style, setStyle] = useState<MapStyle>("streets");
   const [wheelHint, setWheelHint] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
 
@@ -143,8 +111,6 @@ function MapPicker({ lat, lon, stations, onPick }: Props) {
     return () => ro.disconnect();
   }, [map]);
 
-  const layer = LAYERS[style];
-
   const recenter = () => {
     if (!map) return;
     map.setView([lat, lon], Math.max(map.getZoom(), 14), { animate: !reducedMotion });
@@ -167,9 +133,7 @@ function MapPicker({ lat, lon, stations, onPick }: Props) {
         attributionControl={false}
         dragging={!coarse}
       >
-        {layer.tiles.map((t) => (
-          <TileLayer key={`${style}-${t.url}`} url={t.url} maxNativeZoom={t.maxNativeZoom} maxZoom={t.maxZoom ?? MAX_ZOOM} />
-        ))}
+        <TileLayer url={OSM_TILES} maxNativeZoom={19} maxZoom={MAX_ZOOM} />
         <ClickHandler onPick={onPick} />
         {stations.map((s) => (
           <CircleMarker
@@ -196,27 +160,6 @@ function MapPicker({ lat, lon, stations, onPick }: Props) {
       </MapContainer>
 
       {/* Les contrôles sont hors du conteneur Leaflet : un clic dessus ne déplace pas le point. */}
-      <div
-        role="group"
-        aria-label="Fond de carte"
-        className="absolute left-2 top-2 z-[1000] flex gap-1 rounded-xl border border-white/10 bg-slate-900/85 p-1 shadow-lg backdrop-blur"
-      >
-        {(Object.keys(LAYERS) as MapStyle[]).map((key) => (
-          <button
-            key={key}
-            type="button"
-            aria-pressed={style === key}
-            onClick={() => setStyle(key)}
-            className={cn(
-              "rounded-lg px-2.5 py-1 text-[11px] font-semibold transition",
-              style === key ? "bg-sky-500 text-white shadow-sm" : "text-slate-200 hover:bg-white/10 hover:text-white"
-            )}
-          >
-            {LAYERS[key].label}
-          </button>
-        ))}
-      </div>
-
       <div className="absolute right-2 top-2 z-[1000] flex flex-col overflow-hidden rounded-xl border border-white/10 bg-slate-900/85 shadow-lg backdrop-blur">
         <CtlButton label="Zoomer" onClick={() => map?.zoomIn()}>
           +
@@ -250,12 +193,12 @@ function MapPicker({ lat, lon, stations, onPick }: Props) {
           {coarse ? "Touchez pour placer le point · deux doigts pour déplacer la carte" : "Cliquez pour placer le point · glissez le repère pour l'ajuster"}
         </span>
         <a
-          href={layer.credit.href}
+          href={OSM_CREDIT.href}
           target="_blank"
           rel="noreferrer noopener"
           className="shrink-0 rounded-lg bg-slate-950/80 px-2 py-1 text-slate-200 underline-offset-2 backdrop-blur hover:underline"
         >
-          {layer.credit.text}
+          {OSM_CREDIT.text}
         </a>
       </div>
     </div>
