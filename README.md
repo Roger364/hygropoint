@@ -26,6 +26,23 @@ commercial, quota journalier) et sur des services publics sans clé.
 | Calage sur le passé | Comparaison sur 7 jours entre humidité anticipée et humidité mesurée, regroupée par situation météo ; une correction n'est retenue que si elle améliore les dernières 24 h (validation hors échantillon). |
 | Compte rendu | Verdict lisible (« air sec », « lourd »…), provenance des chiffres, avertissements quand les stations sont trop loin ou trop haut. |
 
+## Captures d'écran
+
+Trois aperçus, pris sur la démo en ligne (<https://labo.bissestudio.ch/>).
+
+**Vue du jour** — le verdict, les mesures du moment et la carte :
+
+![Vue du jour : verdict d'humidité, mesures météo et carte](docs/screenshots/vue-du-jour.png)
+
+**Relief 3D** — le terrain autour du point choisi, ses plans d'eau et ses
+stations de mesure :
+
+![Relief 3D du terrain autour du point choisi](docs/screenshots/relief-3d.png)
+
+**Mobile (390 × 844)** :
+
+![Vue mobile de l'application](docs/screenshots/mobile.png)
+
 ## Comment l'estimation est construite
 
 1. **Modèles** — Open-Meteo renvoie cinq modèles (ECMWF IFS, DWD ICON,
@@ -73,7 +90,7 @@ npm install
 npm run dev      # http://localhost:5173
 ```
 
-Démo en ligne : **à venir** (publication prévue à l'issue de la phase 4).
+Démo en ligne : **<https://labo.bissestudio.ch/>**.
 
 Sous Windows, `demarrer.bat` fait la même chose en double-clic (installation si
 besoin, puis ouverture du navigateur).
