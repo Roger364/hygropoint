@@ -1,0 +1,34 @@
+# Dépendances
+node_modules/
+
+# Sorties de build
+dist/
+dist-ssr/
+.tmp/
+*.local
+
+# Journalisation
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+logs/
+*.log
+
+# Variables d'environnement (aucune clé n'est nécessaire à ce jour, mais on les protège)
+.env
+.env.*
+!.env.example
+
+# Éditeurs et système
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+
+# Caches d'outils
+.cache/
+.eslintcache
+*.tsbuildinfo
