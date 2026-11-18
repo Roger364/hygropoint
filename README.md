@@ -8,6 +8,10 @@ Application web autonome (aucun serveur, aucune clé d'API, aucun compte). Le
 navigateur interroge directement des services publics de météo, de relief et de
 cartographie, puis calcule l'estimation localement.
 
+Projet **non commercial** : c'est une démonstration technique, sans revenu ni
+revente de données, qui s'appuie sur l'offre gratuite d'Open-Meteo (usage non
+commercial, quota journalier) et sur des services publics sans clé.
+
 ---
 
 ## Ce que fait l'application
@@ -69,6 +73,8 @@ npm install
 npm run dev      # http://localhost:5173
 ```
 
+Démo en ligne : **à venir** (publication prévue à l'issue de la phase 4).
+
 Sous Windows, `demarrer.bat` fait la même chose en double-clic (installation si
 besoin, puis ouverture du navigateur).
 
@@ -83,6 +89,35 @@ Grâce à `vite-plugin-singlefile`, le build tient dans **un seul `dist/index.ht
 il peut être ouvert directement, envoyé par courriel ou déposé sur n'importe quel
 hébergement statique (GitHub Pages, Netlify, Cloudflare Pages, un simple dossier
 partagé). Aucune variable d'environnement n'est nécessaire.
+
+### Notices de licence dans le build
+
+Le fichier produit embarque du code tiers compilé : le diffuser relève donc de la
+**redistribution binaire**. Trois obligations en découlent — la clause 2 de la
+BSD-2-Clause de Leaflet, la clause « Notice » de la Hippocratic-2.1 de
+react-leaflet, et la reproduction de l'avis de copyright exigée par la MIT de
+React, React DOM, three.js, clsx et tailwind-merge.
+
+`vite.config.ts` injecte pour cela, à la compilation, un commentaire HTML en tête
+de `<head>` contenant les textes intégraux. Les notices sont **lues dans
+`node_modules`** au moment du build : elles correspondent toujours aux paquets
+réellement installés, sans recopie à maintenir. Un commentaire n'est ni exécuté,
+ni rendu, ni téléchargé ; `vite-plugin-singlefile`, qui n'agit qu'à l'étape
+`generateBundle`, le préserve lors de l'inlining.
+
+### Publier une version
+
+Le build étant un fichier unique, une version publiée est ce fichier renommé :
+
+```bash
+npm run check
+cp dist/index.html hygropoint-1.0.0.html
+sha256sum hygropoint-1.0.0.html   # shasum -a 256 sous macOS
+```
+
+L'archive jointe à la *release* GitHub s'appelle `hygropoint-1.0.0.html` ; son
+empreinte SHA-256 est recalculée **sur l'artefact du tag**, jamais sur un build
+ultérieur.
 
 ## Scripts
 
@@ -145,3 +180,34 @@ Principes tenus dans le code :
   sur les seuls modèles et l'incertitude affichée augmente.
 - Les services publics (Overpass, Photon, IEM) peuvent limiter le débit : les
   messages d'erreur le signalent et les données déjà affichées restent visibles.
+
+## Sécurité
+
+L'application n'a **ni serveur, ni compte, ni identifiant** : le lieu choisi reste
+dans le `localStorage` du navigateur et seules les coordonnées partent vers les
+services météo. Une faille se signale par le **signalement privé de
+vulnérabilité de GitHub** (onglet *Security* du dépôt), jamais par une issue
+publique. Périmètre, versions prises en charge et délais de réponse :
+[`SECURITY.md`](SECURITY.md).
+
+## Licence
+
+Trois affirmations distinctes, à ne pas confondre :
+
+1. **Le code de ce dépôt est sous licence MIT** — voir [`LICENSE`](LICENSE),
+   copyright 2026 Ro (Bisse Studio). C'est elle qui régit votre usage, votre
+   modification et votre redistribution du code du projet.
+2. **Les dépendances gardent leurs licences respectives** et ne sont pas
+   couvertes par cette MIT : Leaflet est sous BSD-2-Clause, react-leaflet sous
+   Hippocratic-2.1 (licence « Ethical Source », non approuvée par l'OSI), React,
+   React DOM, three.js, clsx et tailwind-merge sous MIT.
+3. **Le build est un livrable distinct** : `dist/index.html` embarque ces
+   composants et reproduit leurs avis de licence (voir ci-dessus).
+
+Le projet n'est donc **pas « 100 % MIT »** : seule la première affirmation est
+vraie. L'inventaire complet — versions, licences, textes intégraux — est dans
+[`THIRD-PARTY-NOTICES.md`](THIRD-PARTY-NOTICES.md).
+
+`package.json` porte `"private": true` : cela empêche une **publication npm
+accidentelle** du paquet, pas une fermeture du code. Le dépôt reste public et
+sous MIT.
