@@ -103,12 +103,34 @@ function MapPicker({ lat, lon, stations, onPick }: Props) {
   }, [map]);
 
   // La carte change de taille avec la mise en page, pas seulement avec la fenêtre.
+  // `invalidateSize` lit les dimensions : on le fait dans une image séparée, et
+  // seulement si elles ont réellement changé, pour ne pas déclencher une mise en page
+  // synchrone juste après les écritures DOM de React (reflow forcé).
   useEffect(() => {
     const el = wrapRef.current;
     if (!map || !el || typeof ResizeObserver === "undefined") return;
-    const ro = new ResizeObserver(() => map.invalidateSize());
+    let w = 0;
+    let h = 0;
+    let frame = 0;
+    const measure = () => {
+      frame = 0;
+      const width = el.clientWidth;
+      const height = el.clientHeight;
+      if (width === 0 || height === 0) return;
+      if (width === w && height === h) return;
+      w = width;
+      h = height;
+      map.invalidateSize({ animate: false, pan: false });
+    };
+    const ro = new ResizeObserver(() => {
+      if (frame) return;
+      frame = requestAnimationFrame(measure);
+    });
     ro.observe(el);
-    return () => ro.disconnect();
+    return () => {
+      if (frame) cancelAnimationFrame(frame);
+      ro.disconnect();
+    };
   }, [map]);
 
   const recenter = () => {
