@@ -172,6 +172,9 @@ export default function Terrain3D({ lat, lon, features, stations, nowMs, tz, onP
   const [hovered, setHovered] = useState<string | null>(null);
   const [dragging, setDragging] = useState<{ lat: number; lon: number; elev: number } | null>(null);
   const [spin, setSpin] = useState(false);
+  /** Faux tant que la section n'approche pas de la fenêtre : sa grille attend. */
+  const [near, setNear] = useState(false);
+  const sectionRef = useRef<HTMLElement>(null);
   // Accès direct aux contrôles de la scène, sans la reconstruire.
   const liveRef = useRef<{ controls: OrbitControls; camera: PerspectiveCamera } | null>(null);
   const spinRef = useRef(false);
@@ -201,10 +204,31 @@ export default function Terrain3D({ lat, lon, features, stations, nowMs, tz, onP
     live.controls.update();
   };
 
+  // Le relief 3D est loin sous la ligne de flottaison. Sa grille (n × n altitudes,
+  // jusqu'à 16 requêtes) attend donc que la section entre dans la fenêtre : sinon, elle
+  // disputerait la bande passante aux données visibles et allongerait le LCP.
+  useEffect(() => {
+    if (near) return;
+    const el = sectionRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") {
+      setNear(true);
+      return;
+    }
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) setNear(true);
+      },
+      { rootMargin: "0px" }
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [near]);
+
   // MNT : rechargé si le lieu bouge de plus de ~150 m ou si la résolution change.
   const gridLat = useMemo(() => Math.round(lat * 64) / 64, [lat]);
   const gridLon = useMemo(() => Math.round(lon * 64) / 64, [lon]);
   useEffect(() => {
+    if (!near) return;
     const ctrl = new AbortController();
     setLoading(true);
     setNote(null);
@@ -228,7 +252,7 @@ export default function Terrain3D({ lat, lon, features, stations, nowMs, tz, onP
         setProgress(null);
       });
     return () => ctrl.abort();
-  }, [gridLat, gridLon, res, attempt]);
+  }, [gridLat, gridLon, res, attempt, near]);
 
   const sun = useMemo(() => sunPosition(nowMs + sunOffsetH * 3.6e6, lat, lon), [nowMs, sunOffsetH, lat, lon]);
   const sunLabel = useMemo(
@@ -249,8 +273,13 @@ export default function Terrain3D({ lat, lon, features, stations, nowMs, tz, onP
       return;
     }
     const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+    // Dimensions lues une fois, puis tenues à jour par le ResizeObserver : les relire
+    // dans la boucle de rendu forçait une mise en page à chaque image (l'échelle est
+    // écrite en style juste avant la lecture de la hauteur).
+    let viewW = mount.clientWidth;
+    let viewH = mount.clientHeight;
     renderer.setPixelRatio(dpr);
-    renderer.setSize(mount.clientWidth, mount.clientHeight, false);
+    renderer.setSize(viewW, viewH, false);
     renderer.setClearColor(0x000000, 0);
     mount.appendChild(renderer.domElement);
     // three.js expose un canvas intrinsèque de (largeur × DPR) : sans dimensionnement
@@ -269,7 +298,7 @@ export default function Terrain3D({ lat, lon, features, stations, nowMs, tz, onP
     renderer.domElement.setAttribute("aria-hidden", "true");
 
     const scene = new Scene();
-    const camera = new PerspectiveCamera(42, mount.clientWidth / Math.max(1, mount.clientHeight), 0.05, 400);
+    const camera = new PerspectiveCamera(42, viewW / Math.max(1, viewH), 0.05, 400);
     // Le relief occupe toujours la même place à l'écran, quelle que soit l'emprise :
     // c'est l'emprise qui change, pas le cadrage. La distance idéale est donc fixe.
     camera.position.set(0, 7.2, 9.6);
@@ -694,10 +723,10 @@ export default function Terrain3D({ lat, lon, features, stations, nowMs, tz, onP
         needleRef.current.setAttribute("transform", `rotate(${(-controls.getAzimuthalAngle() * 180) / Math.PI} 22 22)`);
       }
       // Échelle : mètres réels par pixel, à la distance actuelle de la caméra.
-      if (scaleBarRef.current && scaleLabelRef.current && mount.clientHeight > 0) {
+      if (scaleBarRef.current && scaleLabelRef.current && viewH > 0) {
         const dist = Math.max(0.2, camera.position.distanceTo(controls.target));
         const visibleH = 2 * Math.tan((camera.fov * Math.PI) / 360) * dist;
-        const mPerPx = ((visibleH * grid.widthM) / WORLD) / mount.clientHeight;
+        const mPerPx = ((visibleH * grid.widthM) / WORLD) / viewH;
         const raw = mPerPx * 110;
         let nice = NICE[NICE.length - 1];
         for (const s of NICE) if (s >= raw * 0.55) { nice = s; break; }
@@ -731,6 +760,8 @@ export default function Terrain3D({ lat, lon, features, stations, nowMs, tz, onP
       const w = mount.clientWidth;
       const h = mount.clientHeight;
       if (w === 0 || h === 0) return;
+      viewW = w;
+      viewH = h;
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
       renderer.setSize(w, h, false);
@@ -777,6 +808,7 @@ export default function Terrain3D({ lat, lon, features, stations, nowMs, tz, onP
 
   return (
     <section
+      ref={sectionRef}
       id="relief"
       aria-labelledby="terrain3d-title"
       className="min-w-0 scroll-mt-4 overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/30 backdrop-blur-xl"
