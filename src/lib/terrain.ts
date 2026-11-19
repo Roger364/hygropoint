@@ -10,7 +10,7 @@
 // d'énergie d'un versant, évaporation d'un plan d'eau) dont l'ordre de grandeur est
 // encadré mais non mesuré ici : c'est explicité dans l'interface.
 
-import { getJson, HttpError, type RequestOptions } from "./http";
+import { getJson, HttpError, isAbort, type RequestOptions } from "./http";
 import { clamp } from "./physics";
 
 // ---------------------------------------------------------------- types
@@ -469,11 +469,18 @@ export async function fetchTerrain(
     const notes: string[] = [];
     const stStencil = stations.slice(0, 3).flatMap((s) => ringStencil(s.lat, s.lon));
     const own = stencil(lat, lon);
+    // Relief et occupation du sol sont indépendants : les demander ensemble évite
+    // d'ajouter la latence de l'un à celle de l'autre (plusieurs secondes en 4G).
+    const [elevRes, osmRes] = await Promise.allSettled([
+      fetchElevations([...own, ...stStencil], opts),
+      fetchOverpass(lat, lon, opts),
+    ]);
+
     let point: TerrainPoint = { ...EMPTY_TERRAIN.point };
     const stationTerrain: TerrainInfo["stations"] = {};
 
-    try {
-      const elev = await fetchElevations([...own, ...stStencil], opts);
+    if (elevRes.status === "fulfilled") {
+      const elev = elevRes.value;
       const ownE = elev.slice(0, own.length);
       if (ownE.some((v) => Number.isFinite(v))) {
         point = describeGrid(lat, ownE.map((v) => (Number.isFinite(v) ? v : point.elevation ?? 0)));
@@ -484,23 +491,22 @@ export async function fetchTerrain(
         off += 5;
         stationTerrain[s.id] = poolFromTpi(e);
       }
-    } catch (e) {
-      if (e instanceof HttpError && e.kind === "aborted") throw e;
+    } else {
+      if (isAbort(elevRes.reason)) throw elevRes.reason;
       notes.push("Modèle de terrain inaccessible : relief non analysé.");
     }
 
     let water: WaterFeature | null = null;
     let forest: ForestCover | null = null;
     let foundFeatures: TerrainFeature[] = [];
-    try {
-      const elements = await fetchOverpass(lat, lon, opts);
-      const r = analyseSurroundings(lat, lon, elements);
+    if (osmRes.status === "fulfilled") {
+      const r = analyseSurroundings(lat, lon, osmRes.value);
       water = r.water;
       forest = r.forest;
       foundFeatures = r.features;
       if (!water && !forest) notes.push("Aucun plan d'eau ni zone boisée cartographiés à proximité.");
-    } catch (e) {
-      if (e instanceof HttpError && e.kind === "aborted") throw e;
+    } else {
+      if (isAbort(osmRes.reason)) throw osmRes.reason;
       notes.push("Carte des alentours (OpenStreetMap) inaccessible : eau et végétation ignorées.");
     }
 
