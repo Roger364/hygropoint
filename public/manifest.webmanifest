@@ -1,0 +1,19 @@
+{
+  "name": "HygroPoint — Humidité relative précise",
+  "short_name": "HygroPoint",
+  "description": "Estimation de l'humidité relative de l'air à l'endroit précis que vous désignez : 24 h passées, maintenant, 72 h à venir, calée sur des mesures réelles.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#020617",
+  "theme_color": "#020617",
+  "lang": "fr",
+  "icons": [
+    {
+      "src": "/og-image.webp",
+      "sizes": "1200x630",
+      "type": "image/webp",
+      "purpose": "any"
+    }
+  ]
+}
