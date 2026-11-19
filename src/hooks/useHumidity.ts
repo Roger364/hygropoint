@@ -75,7 +75,7 @@ export function useHumidity(place: Place, onResolved: (r: ReverseResult, lat: nu
     nowMs: number;
   } | null>(null);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (fresh = false) => {
     const p = placeRef.current;
     ctrlRef.current?.abort();
     const ctrl = new AbortController();
@@ -137,10 +137,15 @@ export function useHumidity(place: Place, onResolved: (r: ReverseResult, lat: nu
       const stationsPromise = geo.then((g) => findStations(p.lat, p.lon, g?.countryCode, g?.state, signal));
       stationsPromise.catch(() => undefined);
 
-      const point = await fetchPointModels(p.lat, p.lon, { signal });
+      // Une actualisation demandée par l'utilisateur relit le réseau ; sinon on
+      // accepte une réponse de moins de 15 min (cache de session).
+      const cache = fresh ? "reload" : "default";
+      const point = await fetchPointModels(p.lat, p.lon, { signal, cache });
       const search = await stationsPromise;
       const ranked = rankStations(search.stations as Station[], point.elevation);
-      const settled = await Promise.allSettled(ranked.map((s) => fetchStationModels(s.lat, s.lon, { signal })));
+      const settled = await Promise.allSettled(
+        ranked.map((s) => fetchStationModels(s.lat, s.lon, { signal, cache }))
+      );
       if (signal.aborted) return;
 
       const inputs: StationInput[] = [];
@@ -219,5 +224,6 @@ export function useHumidity(place: Place, onResolved: (r: ReverseResult, lat: nu
     };
   }, [load]);
 
-  return { ...state, refresh: load };
+  // L'utilisateur qui demande une actualisation ne doit pas recevoir le cache.
+  return { ...state, refresh: () => load(true) };
 }

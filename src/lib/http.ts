@@ -19,6 +19,8 @@ export class HttpError extends Error {
 export interface RequestOptions {
   signal?: AbortSignal;
   timeoutMs?: number;
+  /** `reload` ignore le cache applicatif : réservé au bouton « Actualiser ». */
+  cache?: "default" | "reload";
 }
 
 export async function getText(url: string, { signal, timeoutMs = 12_000 }: RequestOptions = {}): Promise<string> {

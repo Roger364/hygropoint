@@ -2,6 +2,7 @@
 // Mesonet (IEM, Iowa State University). Accès libre, CORS ouvert, quasi temps réel.
 // Le service limite le débit : on met en cache et on enchaîne les requêtes une à une.
 
+import { cachedJson } from "./cache";
 import { describeError, getJson, getText, HttpError, isAbort } from "./http";
 import { haversineKm, regionCode } from "./geo";
 
@@ -116,6 +117,8 @@ interface NetworkFeature {
 }
 
 const networkCache = new Map<string, Promise<StationMeta[]>>();
+/** La liste des stations d'un réseau bouge à l'échelle de la saison. */
+const NETWORK_TTL_MS = 6 * 3.6e6;
 
 function tidyName(raw: string): string {
   const s = raw.trim();
@@ -127,8 +130,11 @@ function tidyName(raw: string): string {
 function loadNetwork(network: string): Promise<StationMeta[]> {
   let p = networkCache.get(network);
   if (!p) {
-    p = getJson<{ features?: NetworkFeature[] }>(`${IEM}/geojson/network/${network}.geojson`, {
-      timeoutMs: 10_000,
+    const url = `${IEM}/geojson/network/${network}.geojson`;
+    p = cachedJson<{ features?: NetworkFeature[] }>({
+      key: url,
+      ttlMs: NETWORK_TTL_MS,
+      load: () => getJson<{ features?: NetworkFeature[] }>(url, { timeoutMs: 10_000 }),
     }).then((json) => {
       const out: StationMeta[] = [];
       for (const f of json.features ?? []) {

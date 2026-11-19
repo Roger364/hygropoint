@@ -2,6 +2,7 @@
 // L'analyse des réponses est volontairement tolérante : horodatages ISO ou Unix,
 // clés suffixées par modèle ou non, objet seul ou tableau.
 
+import { cachedJson } from "./cache";
 import { getJson, HttpError, type RequestOptions } from "./http";
 import { dewPointFromRh } from "./physics";
 
@@ -67,6 +68,13 @@ interface RawResponse {
 }
 
 const API = "https://api.open-meteo.com/v1/forecast";
+
+/**
+ * Durée de conservation des réponses : les modèles sont réémis au mieux toutes
+ * les heures et l'application se rafraîchit toutes les 15 min. Une actualisation
+ * demandée par l'utilisateur court-circuite ce cache (cache: "reload").
+ */
+const FORECAST_TTL_MS = 15 * 60_000;
 
 function toMs(v: unknown, offsetSec: number): number {
   if (typeof v === "number") return v * 1000;
@@ -181,7 +189,13 @@ async function request(
     wind_speed_unit: "kmh",
     ...extra,
   });
-  const raw = await getJson<unknown>(`${API}?${params}`, { timeoutMs: 15_000, ...opts });
+  const url = `${API}?${params}`;
+  const raw = await cachedJson<unknown>({
+    key: url,
+    ttlMs: FORECAST_TTL_MS,
+    bypass: opts.cache === "reload",
+    load: () => getJson<unknown>(url, { timeoutMs: 15_000, ...opts }),
+  });
   return parseModelResponse(raw, ids, degraded);
 }
 
