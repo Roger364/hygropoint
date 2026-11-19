@@ -19,6 +19,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:portable": "vite build --mode portable",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "test": "tsx tests/engine.test.ts",

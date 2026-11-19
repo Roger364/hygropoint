@@ -125,11 +125,30 @@ function thirdPartyNotices(): Plugin {
 }
 
 // https://vite.dev/config/
-export default defineConfig({
-  plugins: [react(), tailwindcss(), thirdPartyNotices(), viteSingleFile()],
-  resolve: {
-    alias: {
-      "@": path.resolve(__dirname, "src"),
+export default defineConfig(({ mode }) => {
+  const portable = mode === "portable";
+  return {
+    plugins: [
+      react(),
+      tailwindcss(),
+      ...(portable ? [thirdPartyNotices(), viteSingleFile()] : []),
+    ],
+    resolve: {
+      alias: {
+        "@": path.resolve(__dirname, "src"),
+      },
     },
-  },
+    build: portable
+      ? {}
+      : {
+          rollupOptions: {
+            output: {
+              manualChunks: {
+                "vendor-three": ["three"],
+                "vendor-leaflet": ["leaflet", "react-leaflet"],
+              },
+            },
+          },
+        },
+  };
 });

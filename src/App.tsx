@@ -1,11 +1,10 @@
-import { useCallback, useDeferredValue, useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useCallback, useDeferredValue, useEffect, useMemo, useState } from "react";
 import ErrorBoundary from "./components/ErrorBoundary";
 import HourlyTable from "./components/HourlyTable";
 import MapPicker from "./components/MapPicker";
 import NowCard from "./components/NowCard";
 import RetrospectiveCard from "./components/RetrospectiveCard";
 import SearchBar from "./components/SearchBar";
-import Terrain3D from "./components/Terrain3D";
 import TerrainCard from "./components/TerrainCard";
 import TimelineChart from "./components/TimelineChart";
 import VerdictCard from "./components/VerdictCard";
@@ -16,6 +15,8 @@ import { DEFAULT_TUNE, isDefaultTune, type Tune } from "./lib/tune";
 import { fmtAgo, fmtCoord, fmtDayShort, fmtFull, fmtHour, localDayKey } from "./lib/format";
 import { haversineKm, type ReverseResult } from "./lib/geo";
 import { cn } from "./utils/cn";
+
+const Terrain3D = lazy(() => import("./components/Terrain3D"));
 
 const STORAGE_KEY = "hygropoint.place";
 const LEGACY_KEY = "hr-place";
@@ -425,7 +426,15 @@ export default function App() {
               />
 
               <ErrorBoundary label="La carte en relief">
-                <Terrain3D
+                <Suspense fallback={
+                  <div className="flex min-h-96 items-center justify-center rounded-3xl border border-white/10 bg-white/[0.04]">
+                    <span className="flex items-center gap-3 text-sm text-slate-400">
+                      <span aria-hidden="true" className="h-5 w-5 animate-spin rounded-full border-2 border-slate-600 border-t-sky-300" />
+                      Chargement du relief 3D…
+                    </span>
+                  </div>
+                }>
+                  <Terrain3D
                   lat={place.lat}
                   lon={place.lon}
                   features={terrain.features}
@@ -439,6 +448,7 @@ export default function App() {
                   deltaSigma={baseline ? result.now.sigma - baseline.now.sigma : 0}
                   rhNow={result.now.rh}
                 />
+                </Suspense>
               </ErrorBoundary>
 
               <ErrorBoundary label="Le graphique">
