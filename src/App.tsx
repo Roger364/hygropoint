@@ -352,7 +352,7 @@ export default function App() {
             {result ? (
               <NowCard result={result} placeLabel={place.label} clock={clock} />
             ) : (
-              <div className="flex min-h-72 items-center justify-center rounded-3xl border border-white/10 bg-white/[0.04] p-6 text-sm text-slate-400">
+              <div className="hp-now-fallback flex min-h-[420px] items-center justify-center rounded-3xl border border-white/10 bg-white/[0.04] p-6 text-sm text-slate-400 lg:min-h-[440px]">
                 {error ? (
                   "Aucune donnée à afficher pour ce point."
                 ) : (
@@ -363,7 +363,7 @@ export default function App() {
                 )}
               </div>
             )}
-            <div className="h-72 overflow-hidden rounded-3xl border border-white/10 shadow-2xl shadow-black/30 lg:h-auto lg:min-h-80">
+            <div className="hp-map-wrap h-[320px] overflow-hidden rounded-3xl border border-white/10 shadow-2xl shadow-black/30 lg:h-[440px] lg:min-h-[440px]">
               <ErrorBoundary label="La carte">
                 <MapPicker lat={place.lat} lon={place.lon} stations={stations} onPick={pickOnMap} />
               </ErrorBoundary>
@@ -417,13 +417,13 @@ export default function App() {
                 <NavLink href="#detail" icon="🕐" label="Détail heure par heure" />
               </nav>
 
-              <RetrospectiveCard
+              <div className="hp-below"><RetrospectiveCard
                 report={retro}
                 busy={retroBusy}
                 error={retroError}
                 disabled={!core?.stations.length}
                 onRun={() => void comparePast()}
-              />
+              /></div>
 
               <ErrorBoundary label="La carte en relief">
                 <Suspense fallback={

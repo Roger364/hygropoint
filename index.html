@@ -43,9 +43,39 @@
     </script>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💧</text></svg>" />
     <title>HygroPoint — Humidité relative précise</title>
+    <style>
+      body{background:#020617;margin:0}
+      .hp-shell{max-width:80rem;margin:0 auto;padding:1.25rem 1rem 3.5rem}
+      .hp-banner{height:2.25rem;border-radius:.5rem;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.25)}
+      .hp-header{display:flex;gap:.75rem;align-items:center;margin:1.25rem 0 1rem}
+      .hp-logo{width:3rem;height:3rem;border-radius:1rem;background:linear-gradient(135deg,#38bdf8,#6366f1)}
+      .hp-title{height:2rem;width:12rem;border-radius:.5rem;background:rgba(255,255,255,.08)}
+      .hp-search{height:3rem;flex:1;border-radius:1rem;background:rgba(255,255,255,.06);margin-left:auto}
+      .hp-status{height:.9rem;width:60%;border-radius:.4rem;background:rgba(255,255,255,.06);margin-bottom:1rem}
+      .hp-hero{display:grid;gap:1.25rem;min-height:760px}
+      .hp-now,.hp-map{border-radius:1.5rem;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04)}
+      .hp-now{min-height:420px}
+      .hp-map{min-height:320px;background:#0f172a}
+      @media(min-width:1024px){.hp-hero{grid-template-columns:minmax(0,1fr) 380px;min-height:460px}.hp-now,.hp-map{min-height:440px}}
+      @media(prefers-reduced-motion:no-preference){
+        .hp-now,.hp-map,.hp-title,.hp-search{animation:hp-pulse 1.6s ease-in-out infinite}
+        @keyframes hp-pulse{0%,100%{opacity:1}50%{opacity:.55}}
+      }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!-- Squelette immediat : meme gabarit que le hero React, pour un CLS proche de zero. -->
+      <div class="hp-shell" aria-hidden="true">
+        <div class="hp-banner"></div>
+        <div class="hp-header"><div class="hp-logo"></div><div class="hp-title"></div><div class="hp-search"></div></div>
+        <div class="hp-status"></div>
+        <div class="hp-hero">
+          <div class="hp-now"></div>
+          <div class="hp-map"></div>
+        </div>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

@@ -37,6 +37,12 @@ body {
   border-radius: 999px;
 }
 
+/* Anti-CLS : la carte et le hero gardent leur place avant Leaflet / données. */
+.hp-map-wrap{min-height:320px;aspect-ratio:16/10}
+@media(min-width:1024px){.hp-map-wrap{min-height:440px;aspect-ratio:auto}}
+.hp-now-fallback{min-height:440px}
+.hp-below{content-visibility:auto;contain-intrinsic-size:auto 900px}
+
 /* Leaflet : intégration au thème */
 .leaflet-container {
   background: #0f172a;
