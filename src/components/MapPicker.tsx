@@ -173,7 +173,12 @@ function MapPicker({ lat, lon, stations, onPick }: Props) {
   };
 
   return (
-    <div ref={wrapRef} className="relative isolate h-full w-full overflow-hidden rounded-3xl">
+    <div
+      ref={wrapRef}
+      role="application"
+      aria-label="Carte interactive — flèches pour déplacer le point choisi"
+      className="relative isolate h-full w-full overflow-hidden rounded-3xl"
+    >
       <img
         src="/img/hero-512.webp"
         alt=""
@@ -191,7 +196,6 @@ function MapPicker({ lat, lon, stations, onPick }: Props) {
         attributionControl={false}
         dragging={!coarse}
         keyboard={true}
-        aria-label="Carte interactive — flèches pour déplacer le point choisi"
       >
         <TileLayer url={OSM_TILES} maxNativeZoom={19} maxZoom={MAX_ZOOM} />
         <ClickHandler onPick={onPick} />
