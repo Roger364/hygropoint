@@ -46,6 +46,35 @@ function ClickHandler({ onPick }: { onPick: (lat: number, lon: number) => void }
   return null;
 }
 
+function KeyboardHandler({ lat, lon, onPick }: { lat: number; lon: number; onPick: (lat: number, lon: number) => void }) {
+  useMapEvents({
+    keydown(e: L.LeafletKeyboardEvent) {
+      const step = 0.0005;
+      let newLat = lat;
+      let newLon = lon;
+      switch (e.originalEvent.key) {
+        case "ArrowUp":
+          newLat += step;
+          break;
+        case "ArrowDown":
+          newLat -= step;
+          break;
+        case "ArrowLeft":
+          newLon -= step;
+          break;
+        case "ArrowRight":
+          newLon += step;
+          break;
+        default:
+          return;
+      }
+      e.originalEvent.preventDefault();
+      onPick(newLat, newLon);
+    },
+  });
+  return null;
+}
+
 const mediaMatches = (query: string): boolean =>
   typeof window !== "undefined" && typeof window.matchMedia === "function" && window.matchMedia(query).matches;
 
@@ -161,9 +190,12 @@ function MapPicker({ lat, lon, stations, onPick }: Props) {
         zoomControl={false}
         attributionControl={false}
         dragging={!coarse}
+        keyboard={true}
+        aria-label="Carte interactive — flèches pour déplacer le point choisi"
       >
         <TileLayer url={OSM_TILES} maxNativeZoom={19} maxZoom={MAX_ZOOM} />
         <ClickHandler onPick={onPick} />
+        <KeyboardHandler lat={lat} lon={lon} onPick={onPick} />
         {stations.map((s) => (
           <CircleMarker
             key={s.id}
@@ -181,9 +213,10 @@ function MapPicker({ lat, lon, stations, onPick }: Props) {
           position={[lat, lon]}
           icon={pinIcon}
           draggable
+          keyboard
           eventHandlers={markerHandlers}
           alt="Point choisi"
-          title="Point choisi — glissez pour l'ajuster"
+          title="Point choisi — flèches pour le déplacer"
           zIndexOffset={1000}
         />
       </MapContainer>
@@ -217,9 +250,15 @@ function MapPicker({ lat, lon, stations, onPick }: Props) {
         </div>
       )}
 
+      <div className="pointer-events-none absolute bottom-12 left-2 z-[1000]">
+        <span aria-live="polite" className="sr-only">
+          Point choisi : {lat.toFixed(4)}, {lon.toFixed(4)}
+        </span>
+      </div>
+
       <div className="absolute inset-x-2 bottom-2 z-[1000] flex items-end justify-between gap-2 text-[10px] leading-tight">
         <span className="pointer-events-none rounded-lg bg-slate-950/80 px-2 py-1 text-slate-200 backdrop-blur">
-          {coarse ? "Touchez pour placer le point · deux doigts pour déplacer la carte" : "Cliquez pour placer le point · glissez le repère pour l'ajuster"}
+          {coarse ? "Touchez pour placer le point · deux doigts pour déplacer la carte" : "Cliquez ou utilisez les flèches pour placer le point"}
         </span>
         <a
           href={OSM_CREDIT.href}
