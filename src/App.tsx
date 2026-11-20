@@ -439,13 +439,14 @@ export default function App() {
                   )}
                 </div>
               )}
-              <div className="mt-3 rounded-2xl border border-white/10 bg-white/[0.03] p-3 text-xs leading-relaxed text-slate-300">
-                <p className="font-semibold text-slate-200">Ce que cette page démontre</p>
-                <p className="mt-1 text-slate-400">Carte interactive, relief 3D, stations météo à proximité — et un budget de performance tenu.</p>
-                <p className="mt-1 font-mono text-slate-300">CLS 0 · LCP mobile 1,36 s · Performance 100/100</p>
-                <p className="mt-1 text-[10px] text-slate-400">PageSpeed Insights, médiane de 4 runs du 20 nov. 2026, sur cette URL.</p>
-              </div>
             </div>
+          </div>
+
+          <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-3 text-xs leading-relaxed text-slate-300">
+            <p className="font-semibold text-slate-200">Ce que cette page démontre</p>
+            <p className="mt-1 text-slate-400">Carte interactive, relief 3D, stations météo à proximité — et un budget de performance tenu.</p>
+            <p className="mt-1 font-mono text-slate-300">CLS 0 · LCP mobile 1,36 s · Performance 100/100</p>
+            <p className="mt-1 text-[10px] text-slate-400">PageSpeed Insights, médiane de 4 runs du 20 nov. 2026, sur cette URL.</p>
           </div>
 
           {displayResult && displayPoint && (
