@@ -6,7 +6,7 @@ import { cachedJson } from "./cache";
 import { describeError, getJson, getText, HttpError, isAbort } from "./http";
 import { haversineKm, regionCode } from "./geo";
 
-const IEM = "https://mesonet.agron.iastate.edu";
+// IEM supprimé : les appels passent par le proxy /api/asos (same-origin).
 
 export const SEARCH_RADIUS_KM = 80;
 const MAX_CANDIDATES = 5;
@@ -130,7 +130,7 @@ function tidyName(raw: string): string {
 function loadNetwork(network: string): Promise<StationMeta[]> {
   let p = networkCache.get(network);
   if (!p) {
-    const url = `${IEM}/geojson/network/${network}.geojson`;
+    const url = `/api/asos-network?network=${encodeURIComponent(network)}`;
     p = cachedJson<{ features?: NetworkFeature[] }>({
       key: url,
       ttlMs: NETWORK_TTL_MS,
