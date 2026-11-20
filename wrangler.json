@@ -1,0 +1,11 @@
+{
+  "name": "hygropoint",
+  "compatibility_date": "2026-11-19",
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "hygropoint-vitals",
+      "database_id": "ae06aa31-37bf-404f-a96f-7cfe65f814a6"
+    }
+  ]
+}
