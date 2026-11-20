@@ -16,6 +16,7 @@ export const onRequestGet = async (context: any): Promise<Response> => {
     const cached = await cache.match(cacheKey);
     if (cached) {
       const res = new Response(cached.body, cached);
+      res.headers.set("Content-Type", "application/json");
       res.headers.set("X-Cache", "HIT");
       return res;
     }
@@ -30,7 +31,7 @@ export const onRequestGet = async (context: any): Promise<Response> => {
     const response = new Response(body, {
       status: upstream.status,
       headers: {
-        "Content-Type": upstream.headers.get("Content-Type") || "application/json",
+        "Content-Type": "application/json",
         "Cache-Control": `public, max-age=${CACHE_TTL}, s-maxage=${CACHE_TTL}`,
         "X-Cache": "MISS",
       },
