@@ -1,7 +1,6 @@
 import { lazy, Suspense, useCallback, useDeferredValue, useEffect, useMemo, useState } from "react";
 import ErrorBoundary from "./components/ErrorBoundary";
 import HourlyTable from "./components/HourlyTable";
-import MapPicker from "./components/MapPicker";
 import NowCard from "./components/NowCard";
 import RetrospectiveCard from "./components/RetrospectiveCard";
 import SearchBar from "./components/SearchBar";
@@ -19,6 +18,7 @@ import { cn } from "./utils/cn";
 import type { ModelData } from "./lib/openmeteo";
 
 const Terrain3D = lazy(() => import("./components/Terrain3D"));
+const MapPicker = lazy(() => import("./components/MapPicker"));
 
 const STORAGE_KEY = "hygropoint.place";
 const LEGACY_KEY = "hr-place";
@@ -421,7 +421,16 @@ export default function App() {
           <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_380px]">
             <div key="map-container" className="order-1 hp-map-wrap h-[320px] overflow-hidden rounded-3xl border border-white/10 shadow-2xl shadow-black/30 lg:order-2 lg:h-[440px] lg:min-h-[440px]" style={{ minHeight: "320px" }}>
               <ErrorBoundary label="La carte">
-                <MapPicker lat={place.lat} lon={place.lon} stations={stations} onPick={pickOnMap} />
+                <Suspense fallback={
+                  <img
+                    src="https://tile.openstreetmap.org/12/2074/1409.png"
+                    alt=""
+                    aria-hidden="true"
+                    className="pointer-events-none absolute inset-0 h-full w-full object-cover"
+                  />
+                }>
+                  <MapPicker lat={place.lat} lon={place.lon} stations={stations} onPick={pickOnMap} />
+                </Suspense>
               </ErrorBoundary>
             </div>
             <div key="hero" className="order-2 lg:order-1">
