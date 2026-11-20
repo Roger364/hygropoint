@@ -73,6 +73,36 @@ export const onRequestPost = async (context: any): Promise<Response> => {
       return new Response("bad request", { status: 400 });
     }
 
+    // Bornes : cls ∈ [0,1], lcp/inp/ttfb ≤ 120 000, ts dans une fenêtre de 7 jours.
+    const ok = (n: unknown, max: number) =>
+      typeof n === "number" && Number.isFinite(n) && n >= 0 && n <= max;
+    if (body.cls !== undefined && !ok(body.cls, 1)) {
+      return new Response("bad request", { status: 400 });
+    }
+    if (body.lcp !== undefined && !ok(body.lcp, 120000)) {
+      return new Response("bad request", { status: 400 });
+    }
+    if (body.inp !== undefined && !ok(body.inp, 120000)) {
+      return new Response("bad request", { status: 400 });
+    }
+    if (body.ttfb !== undefined && !ok(body.ttfb, 120000)) {
+      return new Response("bad request", { status: 400 });
+    }
+    if (body.ts !== undefined) {
+      const now = Date.now();
+      const sevenDays = 7 * 24 * 60 * 60 * 1000;
+      if (typeof body.ts !== "number" || !Number.isFinite(body.ts) || body.ts < now - sevenDays || body.ts > now + sevenDays) {
+        return new Response("bad request", { status: 400 });
+      }
+    }
+
+    // Contrôle d'origine : rejeter les origines inconnues.
+    const origin = context.request.headers.get("origin");
+    const allowedOrigins = new Set(["https://labo.bissestudio.ch", "https://labo-hygropoint.pages.dev", "http://localhost:5173"]);
+    if (origin && !allowedOrigins.has(origin)) {
+      return new Response("bad request", { status: 400 });
+    }
+
     // Normaliser le chemin.
     const path = (typeof body.path === "string" ? body.path : "/")
       .split("?")[0]
