@@ -331,7 +331,7 @@ export default function App() {
           </span>
           <span className="hidden sm:inline">Actualisation automatique toutes les 15 min</span>
           <span className="font-mono">{fmtCoord(place.lat, place.lon)}</span>
-          <span>Heure du lieu : {fmtFull(clock, tz)}</span>
+          <span className="tabular-nums">Heure du lieu : {fmtFull(clock, tz)}</span>
         </p>
 
         {(error || notice) && (
