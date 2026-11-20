@@ -16,11 +16,25 @@ const ALLOWED_KEYS = new Set(["path", "cls", "lcp", "inp", "ttfb", "ts"]);
 
 export const onRequestPost = async (context: any): Promise<Response> => {
   try {
+    // Plafonner le corps à 2 Ko.
+    const contentLength = context.request.headers.get("content-length");
+    if (contentLength && parseInt(contentLength, 10) > 2048) {
+      return new Response("bad request", { status: 413 });
+    }
+
     const text = await context.request.text();
+    if (text.length > 2048) {
+      return new Response("bad request", { status: 413 });
+    }
+
     let raw: Record<string, unknown>;
     try {
       raw = JSON.parse(text) as Record<string, unknown>;
     } catch {
+      return new Response("bad request", { status: 400 });
+    }
+
+    if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
       return new Response("bad request", { status: 400 });
     }
 
@@ -30,12 +44,32 @@ export const onRequestPost = async (context: any): Promise<Response> => {
       if (key in raw) body[key as keyof VitalsPayload] = raw[key] as any;
     }
 
-    // Validation minimale : au moins une métrique, types corrects.
+    // Validation : au moins une métrique, types corrects, valeurs finies.
     const hasMetric =
       (typeof body.cls === "number" && isFinite(body.cls)) ||
       (typeof body.lcp === "number" && isFinite(body.lcp)) ||
       (typeof body.inp === "number" && isFinite(body.inp));
     if (!hasMetric) {
+      return new Response("bad request", { status: 400 });
+    }
+
+    // Valider les types des champs présents.
+    if (body.cls !== undefined && (typeof body.cls !== "number" || !isFinite(body.cls))) {
+      return new Response("bad request", { status: 400 });
+    }
+    if (body.lcp !== undefined && (typeof body.lcp !== "number" || !isFinite(body.lcp))) {
+      return new Response("bad request", { status: 400 });
+    }
+    if (body.inp !== undefined && (typeof body.inp !== "number" || !isFinite(body.inp))) {
+      return new Response("bad request", { status: 400 });
+    }
+    if (body.ttfb !== undefined && (typeof body.ttfb !== "number" || !isFinite(body.ttfb))) {
+      return new Response("bad request", { status: 400 });
+    }
+    if (body.ts !== undefined && (typeof body.ts !== "number" || !isFinite(body.ts))) {
+      return new Response("bad request", { status: 400 });
+    }
+    if (body.path !== undefined && typeof body.path !== "string") {
       return new Response("bad request", { status: 400 });
     }
 
@@ -45,23 +79,26 @@ export const onRequestPost = async (context: any): Promise<Response> => {
       .split("#")[0]
       .slice(0, 200);
 
-    // Stockage D1.
+    // Vérifier le binding D1.
     const db = (context.env as any)?.DB;
-    if (db) {
-      await db
-        .prepare(
-          "INSERT INTO vitals (path, cls, lcp, inp, ttfb, ts) VALUES (?, ?, ?, ?, ?, ?)"
-        )
-        .bind(
-          path,
-          typeof body.cls === "number" ? +body.cls.toFixed(4) : null,
-          typeof body.lcp === "number" ? Math.round(body.lcp) : null,
-          typeof body.inp === "number" ? Math.round(body.inp) : null,
-          typeof body.ttfb === "number" ? Math.round(body.ttfb) : null,
-          typeof body.ts === "number" ? body.ts : Date.now()
-        )
-        .run();
+    if (!db) {
+      return new Response("service unavailable", { status: 503 });
     }
+
+    // Stockage D1.
+    await db
+      .prepare(
+        "INSERT INTO vitals (path, cls, lcp, inp, ttfb, ts) VALUES (?, ?, ?, ?, ?, ?)"
+      )
+      .bind(
+        path,
+        typeof body.cls === "number" ? +body.cls.toFixed(4) : null,
+        typeof body.lcp === "number" ? Math.round(body.lcp) : null,
+        typeof body.inp === "number" ? Math.round(body.inp) : null,
+        typeof body.ttfb === "number" ? Math.round(body.ttfb) : null,
+        typeof body.ts === "number" ? body.ts : Date.now()
+      )
+      .run();
 
     return new Response(null, {
       status: 204,

@@ -34,8 +34,8 @@ import ErrorBoundary from "./components/ErrorBoundary";
   const nav = performance.getEntriesByType("navigation")[0] as PerformanceNavigationTiming | undefined;
   if (nav) ttfb = nav.responseStart - nav.requestStart;
 
-  // CLS — max d'une fenêtre glissante de 5 s (coupure à 1 s d'inactivité).
-  // Ce n'est pas une somme cumulée : le CLS officiel est le pire cas sur 5 s.
+  // CLS — max d'une fenêtre glissante de 5 s (coupure après 1 s d'inactivité).
+  // Le CLS officiel est le pire cas sur 5 s, pas une somme cumulée.
   const clsEntries: Array<{ t: number; v: number }> = [];
   new PerformanceObserver((l) => {
     l.getEntries().forEach((e) => {
@@ -46,15 +46,17 @@ import ErrorBoundary from "./components/ErrorBoundary";
       let maxSession = 0;
       let sessionStart = 0;
       let sessionValue = 0;
+      let lastEntry = 0;
       for (const entry of clsEntries) {
-        if (sessionStart === 0 || entry.t - sessionStart > 5000 || entry.t - (sessionStart + sessionValue) > 1000) {
-          // Nouvelle session (gap > 1 s ou > 5 s depuis le début).
+        if (sessionStart === 0 || entry.t - sessionStart > 5000 || entry.t - lastEntry > 1000) {
+          // Nouvelle session (gap > 1 s d'inactivité ou > 5 s depuis le début).
           maxSession = Math.max(maxSession, sessionValue);
           sessionStart = entry.t;
           sessionValue = entry.v;
         } else {
           sessionValue += entry.v;
         }
+        lastEntry = entry.t;
       }
       maxSession = Math.max(maxSession, sessionValue);
       cls = maxSession;
