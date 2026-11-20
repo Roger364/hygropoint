@@ -382,21 +382,23 @@ export default function App() {
 
         <main className={cn("flex flex-col gap-5 transition-opacity", loading && displayResult && "opacity-70", "lg:min-h-[3400px]")} aria-busy={loading}>
           <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_380px]">
-            {displayResult ? (
-              <NowCard result={displayResult} placeLabel={place.label} clock={clock} />
-            ) : (
-              <div className="hp-now-fallback flex min-h-[420px] items-center justify-center rounded-3xl border border-white/10 bg-white/[0.04] p-6 text-sm text-slate-400 lg:min-h-[440px]">
-                {error ? (
-                  "Aucune donnée à afficher pour ce point."
-                ) : (
-                  <span className="flex items-center gap-3">
-                    <span aria-hidden="true" className="h-5 w-5 animate-spin rounded-full border-2 border-slate-600 border-t-sky-300" />
-                    Interrogation des modèles et des stations de mesure…
-                  </span>
-                )}
-              </div>
-            )}
-            <div className="hp-map-wrap h-[320px] overflow-hidden rounded-3xl border border-white/10 shadow-2xl shadow-black/30 lg:h-[440px] lg:min-h-[440px]" style={{ minHeight: "320px" }}>
+            <div key="hero">
+              {displayResult ? (
+                <NowCard result={displayResult} placeLabel={place.label} clock={clock} />
+              ) : (
+                <div className="hp-now-fallback flex min-h-[420px] items-center justify-center rounded-3xl border border-white/10 bg-white/[0.04] p-6 text-sm text-slate-400 lg:min-h-[440px]">
+                  {error ? (
+                    "Aucune donnée à afficher pour ce point."
+                  ) : (
+                    <span className="flex items-center gap-3">
+                      <span aria-hidden="true" className="h-5 w-5 animate-spin rounded-full border-2 border-slate-600 border-t-sky-300" />
+                      Interrogation des modèles et des stations de mesure…
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+            <div key="map-container" className="hp-map-wrap h-[320px] overflow-hidden rounded-3xl border border-white/10 shadow-2xl shadow-black/30 lg:h-[440px] lg:min-h-[440px]" style={{ minHeight: "320px" }}>
               <ErrorBoundary label="La carte">
                 <MapPicker lat={place.lat} lon={place.lon} stations={stations} onPick={pickOnMap} />
               </ErrorBoundary>
