@@ -146,7 +146,7 @@ function MapPicker({ lat, lon, stations, onPick }: Props) {
   return (
     <div ref={wrapRef} className="relative isolate h-full w-full overflow-hidden rounded-3xl">
       <img
-        src="https://tile.openstreetmap.org/12/2074/1409.png"
+        src="/img/hero-512.webp"
         alt=""
         aria-hidden="true"
         fetchPriority="high"

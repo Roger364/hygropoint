@@ -9,6 +9,6 @@
 /assets/*
   Cache-Control: public, max-age=31536000, immutable
 
-# Map tiles (OSM)
-https://tile.openstreetmap.org/*
-  Access-Control-Allow-Origin: *
+# Hero image (LCP) — cache immutable
+/img/*
+  Cache-Control: public, max-age=31536000, immutable
