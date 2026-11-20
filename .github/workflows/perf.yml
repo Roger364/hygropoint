@@ -1,0 +1,40 @@
+name: perf
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: perf-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+      - run: npm run build
+
+      - name: Gate structurel (bloquant)
+        run: node scripts/perf-gate.mjs
+
+      - name: Lighthouse CI (informatif, budgets à calibrer sur 3 runs)
+        continue-on-error: true
+        run: npx --yes @lhci/cli autorun --config=./lighthouserc.json
+
+      - name: Conserver les rapports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse
+          path: .lighthouseci
+          if-no-files-found: ignore
