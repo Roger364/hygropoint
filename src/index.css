@@ -41,7 +41,7 @@ body {
 .hp-map-wrap{min-height:320px;aspect-ratio:16/10}
 @media(min-width:1024px){.hp-map-wrap{min-height:440px;aspect-ratio:auto}}
 .hp-now-fallback{min-height:440px}
-.hp-below{content-visibility:auto;contain-intrinsic-size:auto 900px}
+.hp-below{content-visibility:auto;contain-intrinsic-size:auto 100px}
 
 /* Leaflet : intégration au thème */
 .leaflet-container {
