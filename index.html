@@ -56,8 +56,8 @@
       .hp-hero{display:grid;gap:1.25rem;min-height:760px}
       .hp-now,.hp-map{border-radius:1.5rem;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04)}
       .hp-now{min-height:420px}
-      .hp-map{min-height:320px;background:#0f172a}
-      @media(min-width:1024px){.hp-hero{grid-template-columns:minmax(0,1fr) 380px;min-height:440px}.hp-now,.hp-map{min-height:440px}}
+      .hp-map{min-height:320px;background:#0f172a;order:-1}
+      @media(min-width:1024px){.hp-hero{grid-template-columns:minmax(0,1fr) 380px;min-height:440px}.hp-now,.hp-map{min-height:440px;order:0}}
       @media(prefers-reduced-motion:no-preference){
         .hp-now,.hp-map,.hp-title,.hp-search{animation:hp-pulse 1.6s ease-in-out infinite}
         @keyframes hp-pulse{0%,100%{opacity:1}50%{opacity:.55}}
