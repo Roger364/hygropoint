@@ -66,13 +66,12 @@ export const onRequestPost = async (context: any): Promise<Response> => {
     if (body.ttfb !== undefined && (typeof body.ttfb !== "number" || !isFinite(body.ttfb))) {
       return new Response("bad request", { status: 400 });
     }
-    if (body.ts !== undefined && (typeof body.ts !== "number" || !isFinite(body.ts))) {
-      return new Response("bad request", { status: 400 });
-    }
     if (body.path !== undefined && typeof body.path !== "string") {
       return new Response("bad request", { status: 400 });
     }
-
+    if (!Number.isFinite(body.ts)) {
+      return new Response("bad request", { status: 400 });
+    }
     // Bornes : cls ∈ [0,1], lcp/inp/ttfb ≤ 120 000, ts dans une fenêtre de 7 jours.
     const ok = (n: unknown, max: number) =>
       typeof n === "number" && Number.isFinite(n) && n >= 0 && n <= max;
@@ -88,10 +87,10 @@ export const onRequestPost = async (context: any): Promise<Response> => {
     if (body.ttfb !== undefined && !ok(body.ttfb, 120000)) {
       return new Response("bad request", { status: 400 });
     }
-    if (body.ts !== undefined) {
+    {
       const now = Date.now();
       const sevenDays = 7 * 24 * 60 * 60 * 1000;
-      if (typeof body.ts !== "number" || !Number.isFinite(body.ts) || body.ts < now - sevenDays || body.ts > now + sevenDays) {
+      if ((body.ts as number) < now - sevenDays || (body.ts as number) > now + sevenDays) {
         return new Response("bad request", { status: 400 });
       }
     }
