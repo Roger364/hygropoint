@@ -204,8 +204,13 @@ export function useHumidity(place: Place, onResolved: (r: ReverseResult, lat: nu
   }, []);
 
   useEffect(() => {
-    void load();
-    return () => ctrlRef.current?.abort();
+    const timer = window.setTimeout(() => {
+      void load();
+    }, 200);
+    return () => {
+      window.clearTimeout(timer);
+      ctrlRef.current?.abort();
+    };
   }, [place.lat, place.lon, load]);
 
   useEffect(() => {
