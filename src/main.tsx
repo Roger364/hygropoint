@@ -4,51 +4,66 @@ import "./index.css";
 import App from "./App";
 import ErrorBoundary from "./components/ErrorBoundary";
 
-// Instrumentation CLS/LCP derrière ?clsdebug=1 (lisible dans le rapport PSI via console.debug).
-if (location.search.includes("clsdebug")) {
+// RUM same-origin : collecte CLS, LCP, INP, TTFB via PerformanceObserver.
+// Envoi unique par page via sendBeacon à la fermeture (visibilitychange → hidden).
+// Aucune coordonnée, aucun identifiant, aucun cookie.
+(() => {
+  let cls = 0;
+  let lcp = 0;
+  let inp = 0;
+  let ttfb = 0;
+  let sent = false;
+
+  const send = () => {
+    if (sent) return;
+    sent = true;
+    const payload = JSON.stringify({
+      path: location.pathname,
+      cls: +cls.toFixed(4),
+      lcp: Math.round(lcp),
+      inp: Math.round(inp),
+      ttfb: Math.round(ttfb),
+      ts: Date.now(),
+    });
+    if (navigator.sendBeacon) {
+      navigator.sendBeacon("/api/vitals", new Blob([payload], { type: "application/json" }));
+    }
+  };
+
+  // TTFB
+  const nav = performance.getEntriesByType("navigation")[0] as PerformanceNavigationTiming | undefined;
+  if (nav) ttfb = nav.responseStart - nav.requestStart;
+
+  // CLS
   new PerformanceObserver((l) => {
     l.getEntries().forEach((e) => {
-      const ls = e as PerformanceEntry & { value?: number; hadRecentInput?: boolean; sources?: Array<{ node?: Element; previousRect: DOMRectReadOnly; currentRect: DOMRectReadOnly }> };
+      const ls = e as PerformanceEntry & { value?: number; hadRecentInput?: boolean };
       if (!ls.value || ls.hadRecentInput) return;
-      const main = document.querySelector("main");
-      console.debug("CLSDBG " + JSON.stringify({
-        t: Math.round(e.startTime),
-        v: +ls.value.toFixed(3),
-        src: (ls.sources || []).map((s) => ({
-          sel: s.node ? s.node.tagName + "." + String(s.node.className || "").slice(0, 60) : null,
-          prevTop: Math.round(s.previousRect.top),
-          prevH: Math.round(s.previousRect.height),
-          curTop: Math.round(s.currentRect.top),
-          curH: Math.round(s.currentRect.height),
-        })),
-        ctx: {
-          mainKids: main?.childElementCount ?? null,
-          mainH: main ? Math.round(main.getBoundingClientRect().height) : null,
-          screens: document.querySelectorAll(".min-h-screen").length,
-          txt: (main?.innerText || "").slice(0, 80),
-        },
-      }));
+      cls += ls.value;
     });
   }).observe({ type: "layout-shift", buffered: true });
 
-  new PerformanceObserver((list) => {
-    list.getEntries().forEach((e) => {
-      const lcp = e as PerformanceEntry & { size?: number; url?: string; element?: Element | null };
-      const el = lcp.element;
-      console.debug("LCPDBG " + JSON.stringify({
-        t: Math.round(e.startTime),
-        size: lcp.size ?? null,
-        url: lcp.url || null,
-        sel: el ? el.tagName + "." + String(el.className || "").slice(0, 60) : null,
-        top: el ? Math.round(el.getBoundingClientRect().top) : null,
-        h: el ? Math.round(el.getBoundingClientRect().height) : null,
-        txt: el ? (el as HTMLElement).innerText?.slice(0, 40) ?? null : null,
-        vh: window.innerHeight,
-        scrollY: Math.round(window.scrollY),
-      }));
-    });
+  // LCP
+  new PerformanceObserver((l) => {
+    const entries = l.getEntries();
+    const last = entries[entries.length - 1] as PerformanceEntry & { startTime?: number };
+    if (last?.startTime) lcp = last.startTime;
   }).observe({ type: "largest-contentful-paint", buffered: true });
-}
+
+  // INP
+  new PerformanceObserver((l) => {
+    l.getEntries().forEach((e) => {
+      const ev = e as PerformanceEntry & { duration?: number };
+      if (ev.duration && ev.duration > inp) inp = ev.duration;
+    });
+  }).observe({ type: "event", buffered: true, durationThreshold: 40 } as PerformanceObserverInit);
+
+  // Envoi à la fermeture de la page.
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") send();
+  });
+  window.addEventListener("pagehide", send);
+})();
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
