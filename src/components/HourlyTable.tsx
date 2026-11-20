@@ -182,7 +182,7 @@ function Tab({
       onClick={onSelect}
       className={cn(
         "rounded-lg px-3 py-1.5 text-xs font-semibold transition",
-        selected ? "bg-sky-500 text-white shadow" : "text-slate-300 hover:text-white"
+        selected ? "bg-sky-700 text-white shadow" : "text-slate-300 hover:text-white"
       )}
     >
       {children}

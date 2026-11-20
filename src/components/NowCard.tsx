@@ -170,15 +170,13 @@ export default function NowCard({ result, placeLabel, clock }: Props) {
 
           <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-4">
             {metrics.map((m) => (
-              <div key={m.k} className="flex items-start gap-2">
-                <span aria-hidden="true" className="mt-0.5 text-base leading-none">
+              <div key={m.k} className="relative min-w-0 pl-6">
+                <span aria-hidden="true" className="absolute left-0 top-0.5 text-base leading-none">
                   {m.icon}
                 </span>
-                <div className="min-w-0">
-                  <dt className="text-[11px] text-slate-400">{m.k}</dt>
-                  <dd className="text-sm font-medium text-white">{m.v}</dd>
-                  {m.sub && <dd className="text-[11px] text-slate-400">{m.sub}</dd>}
-                </div>
+                <dt className="text-[11px] text-slate-400">{m.k}</dt>
+                <dd className="text-sm font-medium text-white">{m.v}</dd>
+                {m.sub && <dd className="text-[11px] text-slate-400">{m.sub}</dd>}
               </div>
             ))}
           </dl>

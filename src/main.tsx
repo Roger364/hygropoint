@@ -4,14 +4,14 @@ import "./index.css";
 import App from "./App";
 import ErrorBoundary from "./components/ErrorBoundary";
 
-// Instrumentation CLS derrière ?clsdebug=1 (lisible dans le rapport PSI via console.error).
+// Instrumentation CLS/LCP derrière ?clsdebug=1 (lisible dans le rapport PSI via console.debug).
 if (location.search.includes("clsdebug")) {
   new PerformanceObserver((l) => {
     l.getEntries().forEach((e) => {
       const ls = e as PerformanceEntry & { value?: number; hadRecentInput?: boolean; sources?: Array<{ node?: Element; previousRect: DOMRectReadOnly; currentRect: DOMRectReadOnly }> };
       if (!ls.value || ls.hadRecentInput) return;
       const main = document.querySelector("main");
-      console.error("CLSDBG " + JSON.stringify({
+      console.debug("CLSDBG " + JSON.stringify({
         t: Math.round(e.startTime),
         v: +ls.value.toFixed(3),
         src: (ls.sources || []).map((s) => ({
@@ -35,7 +35,7 @@ if (location.search.includes("clsdebug")) {
     list.getEntries().forEach((e) => {
       const lcp = e as PerformanceEntry & { size?: number; url?: string; element?: Element | null };
       const el = lcp.element;
-      console.error("LCPDBG " + JSON.stringify({
+      console.debug("LCPDBG " + JSON.stringify({
         t: Math.round(e.startTime),
         size: lcp.size ?? null,
         url: lcp.url || null,
