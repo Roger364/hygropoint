@@ -417,7 +417,7 @@ export default function App() {
           </div>
         )}
 
-        <main className={cn("flex flex-col gap-5 transition-opacity", loading && displayResult && "opacity-70", "lg:min-h-[3400px]")} aria-busy={loading}>
+        <main className={cn("flex flex-col gap-5 transition-opacity", loading && displayResult && "opacity-70", "min-h-[3400px]")} aria-busy={loading}>
           <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_380px]">
             <div key="map-container" className="order-1 hp-map-wrap h-[320px] overflow-hidden rounded-3xl border border-white/10 shadow-2xl shadow-black/30 lg:order-2 lg:h-[440px] lg:min-h-[440px]" style={{ minHeight: "320px" }}>
               <ErrorBoundary label="La carte">
