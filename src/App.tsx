@@ -119,13 +119,13 @@ export default function App() {
   const displayCore = core ?? staleCore;
   const displayTerrain = terrain ?? staleTerrain ?? EMPTY_TERRAIN;
   const baseline = useMemo(() => {
-    if (!core || isDefaultTune(deferredTune)) return null;
+    if (!displayCore || isDefaultTune(deferredTune)) return null;
     try {
-      return computeEstimate(core.point, core.stations, core.note, core.nowMs, terrain, DEFAULT_TUNE);
+      return computeEstimate(displayCore.point, displayCore.stations, displayCore.note, displayCore.nowMs, displayTerrain, DEFAULT_TUNE);
     } catch {
       return null;
     }
-  }, [core, terrain, deferredTune]);
+  }, [displayCore, displayTerrain, deferredTune]);
 
   // Un nouveau lieu invalide les réglages : ils décrivent un terrain précis.
   useEffect(() => {
@@ -203,29 +203,29 @@ export default function App() {
     );
   }, [pickOnMap]);
 
-  const tz = point?.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone;
-  const stations = result?.stations ?? NO_STATIONS;
+  const tz = displayPoint?.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const stations = displayResult?.stations ?? NO_STATIONS;
 
   // Repères de la carte en relief : figés par chargement. Les recréer à chaque rendu
   // reconstruirait toute la scène WebGL (horloge, curseurs d’hypothèses…).
   const reliefStations = useMemo(
-    () => (core?.stations ?? []).map((s) => ({ id: s.id, name: s.name, lat: s.lat, lon: s.lon, distanceKm: s.distanceKm })),
-    [core]
+    () => (displayCore?.stations ?? []).map((s) => ({ id: s.id, name: s.name, lat: s.lat, lon: s.lon, distanceKm: s.distanceKm })),
+    [displayCore]
   );
 
   // Synthèse par journée locale. Les journées incomplètes annoncent la plage réellement couverte ;
   // les bribes de moins de 4 h sont omises.
   const days = useMemo<DaySummary[]>(() => {
-    if (!result) return [];
+    if (!displayResult) return [];
     const groups = new Map<string, HourEstimate[]>();
-    for (const h of result.next72) {
+    for (const h of displayResult.next72) {
       const key = localDayKey(h.t, tz);
       const list = groups.get(key);
       if (list) list.push(h);
       else groups.set(key, [h]);
     }
-    const today = localDayKey(result.computedAt, tz);
-    const tomorrow = localDayKey(result.computedAt + 24 * 3.6e6, tz);
+    const today = localDayKey(displayResult.computedAt, tz);
+    const tomorrow = localDayKey(displayResult.computedAt + 24 * 3.6e6, tz);
     return [...groups.entries()]
       .filter(([, hs]) => hs.length >= 4)
       .slice(0, 4)
@@ -241,9 +241,9 @@ export default function App() {
         rain: hs.reduce((a, h) => a + (h.precip ?? 0), 0),
       };
     });
-  }, [result, tz]);
+  }, [displayResult, tz]);
 
-  const ambient = result ? rhColor(result.now.rh) : "#38bdf8";
+  const ambient = displayResult ? rhColor(displayResult.now.rh) : "#38bdf8";
 
   return (
     <div className="relative min-h-screen bg-slate-950 text-slate-100">
