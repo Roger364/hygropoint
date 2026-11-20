@@ -221,7 +221,7 @@ export async function fetchObservations(
   q.set("trace", "null");
   q.append("report_type", "3");
   q.append("report_type", "4");
-  const text = await getText(`${IEM}/cgi-bin/request/asos.py?${q}`, { signal, timeoutMs: 20_000 });
+  const text = await getText(`/api/asos?${q}`, { signal, timeoutMs: 20_000 });
   const data = parseHistoryCsv(text);
   const since = nowMs - hours * 3.6e6;
   const out = new Map<string, Obs[]>();
@@ -259,7 +259,7 @@ async function fetchHistory(ids: string[], nowMs: number, signal?: AbortSignal):
   q.append("report_type", "3");
   q.append("report_type", "4");
 
-  const text = await getText(`${IEM}/cgi-bin/request/asos.py?${q}`, { signal, timeoutMs: 12_000 });
+  const text = await getText(`/api/asos?${q}`, { signal, timeoutMs: 12_000 });
   const data = parseHistoryCsv(text);
   historyCache = { key, at: nowMs, data };
   return data;

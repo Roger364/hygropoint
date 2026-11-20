@@ -3,7 +3,7 @@
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: geolocation=(self)
-  Content-Security-Policy: default-src 'self'; connect-src 'self' https://api.open-meteo.com https://geocoding-api.open-meteo.com https://mesonet.agron.iastate.edu https://photon.komoot.io https://api.bigdatacloud.net https://overpass-api.de https://overpass.kumi.systems; img-src 'self' data: https://tile.openstreetmap.org; style-src 'self' 'unsafe-inline'; script-src 'self'
+  Content-Security-Policy: default-src 'self'; connect-src 'self' https://api.open-meteo.com https://geocoding-api.open-meteo.com https://photon.komoot.io https://api.bigdatacloud.net; img-src 'self' data: https://tile.openstreetmap.org; style-src 'self' 'unsafe-inline'; script-src 'self'
 
 # Hashed assets — cache immutable
 /assets/*
