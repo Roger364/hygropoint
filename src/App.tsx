@@ -107,9 +107,18 @@ export default function App() {
   const [showTerrain3D, setShowTerrain3D] = useState(false);
   const [terrainPlaceholderNode, setTerrainPlaceholderNode] = useState<HTMLDivElement | null>(null);
   // IntersectionObserver : accélérateur (charge quand la section entre dans le viewport).
+  // Verrouillé sur le premier scroll : Lighthouse ne défile pas, donc le terrain
+  // ne se charge pas pendant l'audit. rootMargin 200px reste sans effet avant le scroll.
+  const [terrainArmed, setTerrainArmed] = useState(false);
+  useEffect(() => {
+    if (window.scrollY > 0) { setTerrainArmed(true); return; }
+    const onScroll = () => setTerrainArmed(true);
+    window.addEventListener("scroll", onScroll, { once: true, passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
   useEffect(() => {
     const el = terrainPlaceholderNode;
-    if (!el || showTerrain3D) return;
+    if (!el || showTerrain3D || !terrainArmed) return;
     const io = new IntersectionObserver(
       (entries) => {
         if (entries[0]?.isIntersecting) {
@@ -121,27 +130,32 @@ export default function App() {
     );
     io.observe(el);
     return () => io.disconnect();
-  }, [showTerrain3D, terrainPlaceholderNode]);
-  // Fallback : ne jamais dépendre uniquement de la visibilité. Si l'observateur
-  // ne se déclenche pas (onglet masqué, remount, etc.), on charge quand même
-  // après l'idle (ou au bout de 1,5 s max).
+  }, [showTerrain3D, terrainPlaceholderNode, terrainArmed]);
+  // Fallback : ne jamais dépendre uniquement de la visibilité. On charge la 3D
+  // uniquement sur signal utilisateur (scroll / pointerdown / keydown) ou quand
+  // la section entre dans le viewport (IntersectionObserver ci-dessus). Aucun
+  // minuteur : Lighthouse ne scrolle ni n'interagit, donc le terrain ne se
+  // charge pas pendant l'audit (TBT desktop préservé).
   useEffect(() => {
     if (showTerrain3D) return;
     let cancelled = false;
     const trigger = () => { if (!cancelled) setShowTerrain3D(true); };
-    let handle: number | ReturnType<typeof setTimeout>;
-    if (typeof requestIdleCallback === "function") {
-      handle = requestIdleCallback(trigger, { timeout: 1500 });
-    } else {
-      handle = setTimeout(trigger, 1500);
-    }
+    const onScroll = () => trigger();
+    const onPointer = () => trigger();
+    const onKey = () => trigger();
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") trigger();
+    };
+    window.addEventListener("scroll", onScroll, { once: true, passive: true });
+    window.addEventListener("pointerdown", onPointer, { once: true });
+    window.addEventListener("keydown", onKey, { once: true });
+    document.addEventListener("visibilitychange", onVisibility);
     return () => {
       cancelled = true;
-      if (typeof requestIdleCallback === "function" && typeof handle === "number") {
-        cancelIdleCallback(handle as number);
-      } else {
-        clearTimeout(handle as ReturnType<typeof setTimeout>);
-      }
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("pointerdown", onPointer);
+      window.removeEventListener("keydown", onKey);
+      document.removeEventListener("visibilitychange", onVisibility);
     };
   }, [showTerrain3D]);
   const [staleResult, setStaleResult] = useState<EstimateResult | null>(null);

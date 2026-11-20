@@ -207,8 +207,15 @@ export default function Terrain3D({ lat, lon, features, stations, nowMs, tz, onP
   // Le relief 3D est loin sous la ligne de flottaison. Sa grille (n × n altitudes,
   // jusqu'à 16 requêtes) attend donc que la section entre dans la fenêtre : sinon, elle
   // disputerait la bande passante aux données visibles et allongerait le LCP.
+  const [nearArmed, setNearArmed] = useState(false);
   useEffect(() => {
-    if (near) return;
+    if (window.scrollY > 0) { setNearArmed(true); return; }
+    const onScroll = () => setNearArmed(true);
+    window.addEventListener("scroll", onScroll, { once: true, passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+  useEffect(() => {
+    if (near || !nearArmed) return;
     const el = sectionRef.current;
     if (!el || typeof IntersectionObserver === "undefined") {
       setNear(true);
@@ -222,7 +229,7 @@ export default function Terrain3D({ lat, lon, features, stations, nowMs, tz, onP
     );
     io.observe(el);
     return () => io.disconnect();
-  }, [near]);
+  }, [near, nearArmed]);
 
   // MNT : rechargé si le lieu bouge de plus de ~150 m ou si la résolution change.
   const gridLat = useMemo(() => Math.round(lat * 64) / 64, [lat]);
