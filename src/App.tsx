@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useDeferredValue, useEffect, useMemo, useState } from "react";
 import ErrorBoundary from "./components/ErrorBoundary";
 import HourlyTable from "./components/HourlyTable";
 import MapPicker from "./components/MapPicker";
@@ -105,9 +105,10 @@ export default function App() {
     }
   }, [core, terrain, deferredTune, loaded, learned]);
   const [showTerrain3D, setShowTerrain3D] = useState(false);
-  const terrainPlaceholderRef = useRef<HTMLDivElement>(null);
+  const [terrainPlaceholderNode, setTerrainPlaceholderNode] = useState<HTMLDivElement | null>(null);
+  // IntersectionObserver : accélérateur (charge quand la section entre dans le viewport).
   useEffect(() => {
-    const el = terrainPlaceholderRef.current;
+    const el = terrainPlaceholderNode;
     if (!el || showTerrain3D) return;
     const io = new IntersectionObserver(
       (entries) => {
@@ -120,6 +121,28 @@ export default function App() {
     );
     io.observe(el);
     return () => io.disconnect();
+  }, [showTerrain3D, terrainPlaceholderNode]);
+  // Fallback : ne jamais dépendre uniquement de la visibilité. Si l'observateur
+  // ne se déclenche pas (onglet masqué, remount, etc.), on charge quand même
+  // après l'idle (ou au bout de 1,5 s max).
+  useEffect(() => {
+    if (showTerrain3D) return;
+    let cancelled = false;
+    const trigger = () => { if (!cancelled) setShowTerrain3D(true); };
+    let handle: number | ReturnType<typeof setTimeout>;
+    if (typeof requestIdleCallback === "function") {
+      handle = requestIdleCallback(trigger, { timeout: 1500 });
+    } else {
+      handle = setTimeout(trigger, 1500);
+    }
+    return () => {
+      cancelled = true;
+      if (typeof requestIdleCallback === "function" && typeof handle === "number") {
+        cancelIdleCallback(handle as number);
+      } else {
+        clearTimeout(handle as ReturnType<typeof setTimeout>);
+      }
+    };
   }, [showTerrain3D]);
   const [staleResult, setStaleResult] = useState<EstimateResult | null>(null);
   const [stalePoint, setStalePoint] = useState<ModelData | null>(null);
@@ -487,7 +510,7 @@ export default function App() {
                 </Suspense>
               ) : (
                 <div
-                  ref={terrainPlaceholderRef}
+                  ref={setTerrainPlaceholderNode}
                   className="flex min-h-[440px] items-center justify-center rounded-3xl border border-white/10 bg-white/[0.04]"
                 >
                   <span className="flex items-center gap-3 text-sm text-slate-400">
