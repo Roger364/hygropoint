@@ -4,6 +4,24 @@ import { fileURLToPath } from "url";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig, type Plugin } from "vite";
+
+function cssPreload(): Plugin {
+  return {
+    name: "hygropoint:css-preload",
+    transformIndexHtml: {
+      order: "post",
+      handler(html) {
+        const m = html.match(/<link rel="stylesheet" crossorigin href="(\/assets\/[^"]+\.css)">/);
+        if (m) {
+          const href = m[1];
+          const preload = `<link rel="preload" as="style" href="${href}" crossorigin>`;
+          html = html.replace("<script type=\"module\"", preload + "\n    <script type=\"module\"");
+        }
+        return html;
+      },
+    },
+  };
+}
 import { viteSingleFile } from "vite-plugin-singlefile";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -131,6 +149,7 @@ export default defineConfig(({ mode }) => {
     plugins: [
       react(),
       tailwindcss(),
+      cssPreload(),
       ...(portable ? [thirdPartyNotices(), viteSingleFile()] : []),
     ],
     resolve: {
