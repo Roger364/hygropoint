@@ -65,24 +65,6 @@
     </style>
   </head>
   <body>
-    <script>
-      // Instrumentation CLS derrière ?clsdebug=1 (lisible dans le rapport PSI via console.error).
-      if (location.search.includes('clsdebug')) {
-        new PerformanceObserver(function (l) {
-          l.getEntries().forEach(function (e) {
-            if (!e.value || e.hadRecentInput) return;
-            console.error('CLSDBG ' + JSON.stringify({
-              t: Math.round(e.startTime), v: +e.value.toFixed(3),
-              src: (e.sources || []).map(function (s) {
-                return { sel: s.node ? s.node.tagName + '.' + String(s.node.className || '').slice(0, 60) : null,
-                         prevTop: Math.round(s.previousRect.top), prevH: Math.round(s.previousRect.height),
-                         curTop: Math.round(s.currentRect.top), curH: Math.round(s.currentRect.height) };
-              })
-            }));
-          });
-        }).observe({ type: 'layout-shift', buffered: true });
-      }
-    </script>
     <div id="root">
       <!-- Squelette immediat : meme gabarit que le hero React, pour un CLS proche de zero. -->
       <div class="hp-shell" aria-hidden="true">
