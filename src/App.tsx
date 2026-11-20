@@ -396,7 +396,7 @@ export default function App() {
                 )}
               </div>
             )}
-            <div className="hp-map-wrap h-[320px] overflow-hidden rounded-3xl border border-white/10 shadow-2xl shadow-black/30 lg:h-[440px] lg:min-h-[440px]">
+            <div className="hp-map-wrap h-[320px] overflow-hidden rounded-3xl border border-white/10 shadow-2xl shadow-black/30 lg:h-[440px] lg:min-h-[440px]" style={{ minHeight: "320px" }}>
               <ErrorBoundary label="La carte">
                 <MapPicker lat={place.lat} lon={place.lon} stations={stations} onPick={pickOnMap} />
               </ErrorBoundary>
