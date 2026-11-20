@@ -285,7 +285,7 @@ function TimelineChart({ hours, now, station, members, tz }: Props) {
         </div>
       </div>
 
-      <div ref={wrapRef} className="relative w-full" style={{ height: g.height }}>
+      <div ref={wrapRef} className="relative w-full overflow-x-auto overscroll-x-contain" style={{ height: g.height }}>
         <svg
           width={width}
           height={g.height}

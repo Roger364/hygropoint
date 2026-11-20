@@ -47,7 +47,7 @@
     <style>
       body{background:#020617;margin:0}
       .hp-shell{max-width:80rem;margin:0 auto;padding:1.25rem 1rem 3.5rem}
-      .hp-banner{height:2.25rem;border-radius:.5rem;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.25)}
+      .hp-banner{min-height:2.25rem;border-radius:.5rem;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.25);color:rgba(254,243,199,.9);font-size:.875rem;padding:.5rem 1rem;display:flex;align-items:center}
       .hp-header{display:flex;gap:.75rem;align-items:center;margin:1.25rem 0 1rem}
       .hp-logo{width:3rem;height:3rem;border-radius:1rem;background:linear-gradient(135deg,#38bdf8,#6366f1)}
       .hp-title{height:2rem;width:12rem;border-radius:.5rem;background:rgba(255,255,255,.08)}
@@ -68,7 +68,7 @@
     <div id="root">
       <!-- Squelette immediat : meme gabarit que le hero React, pour un CLS proche de zero. -->
       <div class="hp-shell" aria-hidden="true">
-        <div class="hp-banner"></div>
+        <div class="hp-banner">Expérience technique — estimation indicative de l'humidité relative.</div>
         <div class="hp-header"><div class="hp-logo"></div><div class="hp-title"></div><div class="hp-search"></div></div>
         <div class="hp-status"></div>
         <div class="hp-hero">
