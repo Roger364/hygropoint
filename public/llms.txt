@@ -7,14 +7,24 @@
 - [Accueil](https://labo.bissestudio.ch/) : carte interactive, conditions actuelles, prévisions 72 h, évolution 24 h/72 h, détail heure par heure.
 - [Sources de données](https://labo.bissestudio.ch/#sources) : liste des services météo utilisés (Open-Meteo, stations ASOS/METAR, mesonet).
 
-## Données et API
+## Données et paramètres
 
-- Humidité relative, température, pression, point de rosée, vent, précipitations.
-- Prévisions horaires sur 72 h, historique sur 24 h.
-- Relief 3D (Copernicus 90 m) et occupation du sol (OpenStreetMap).
-- Données issues de services météo ouverts (Open-Meteo, stations ASOS).
+- Paramètres d'entrée : latitude et longitude (point choisi sur la carte).
+- Sorties : humidité relative (%), température (°C), point de rosée (°C), pression (hPa), vent (km/h), précipitations (mm).
+- Historique : 24 h. Prévisions : 72 h horaires.
+- Fraîcheur : données temps réel, rafraîchies à chaque visite.
+- Relief 3D : modèle Copernicus 90 m + occupation du sol OpenStreetMap.
+- Unités : métrique (°C, hPa, km/h, mm).
 
-## Contact
+## Sources
+
+- Open-Meteo (modèles météo ouverts)
+- Stations ASOS/METAR (mesonet)
+- Copernicus DEM 90 m (relief)
+- OpenStreetMap (occupation du sol)
+
+## Citation
 
 - Site : https://labo.bissestudio.ch
 - Auteur : Bisse Studio (bissestudio.ch)
+- Licence : MIT

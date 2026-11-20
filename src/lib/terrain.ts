@@ -106,56 +106,6 @@ export function bearingTo(lat1: number, lon1: number, lat2: number, lon2: number
 }
 
 /** Distance (m) du point au segment [a, b], et azimut du point vers le point le plus proche. */
-function distanceToSegment(
-  plat: number,
-  plon: number,
-  a: { lat: number; lon: number },
-  b: { lat: number; lon: number }
-): { distanceM: number; bearing: number } {
-  const toXY = (p: { lat: number; lon: number }) => ({
-    x: rad(p.lon - plon) * Math.cos(rad(plat)) * 6371000,
-    y: rad(p.lat - plat) * 6371000,
-  });
-  const A = toXY(a);
-  const B = toXY(b);
-  const dx = B.x - A.x;
-  const dy = B.y - A.y;
-  const len2 = dx * dx + dy * dy;
-  let t = len2 > 0 ? clamp((-A.x * dx - A.y * dy) / len2, 0, 1) : 0;
-  let cx = A.x + t * dx;
-  let cy = A.y + t * dy;
-  // Si le point est sur le segment, la direction est indéterminée : on la moyenne des deux extrémités.
-  let dist = Math.hypot(cx, cy);
-  if (dist < 1 && len2 > 0) {
-    const mid = { x: (A.x + B.x) / 2, y: (A.y + B.y) / 2 };
-    const n = Math.hypot(mid.x, mid.y) || 1;
-    cx = mid.x / n;
-    cy = mid.y / n;
-    dist = 0;
-  }
-  const bearing = (deg(Math.atan2(cx, cy)) + 360) % 360; // x = est, y = nord
-  return { distanceM: dist, bearing };
-}
-
-function pointInRing(plat: number, plon: number, ring: { lat: number; lon: number }[]): boolean {
-  let inside = false;
-  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
-    const yi = ring[i].lat;
-    const xi = ring[i].lon;
-    const yj = ring[j].lat;
-    const xj = ring[j].lon;
-    if (yi > plat !== yj > plat && plon < ((xj - xi) * (plat - yi)) / (yj - yi) + xi) inside = !inside;
-  }
-  return inside;
-}
-
-function ringAreaM2(ring: { lat: number; lon: number }[], lat: number): number {
-  let s = 0;
-  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
-    s += rad(ring[j].lon) * Math.sin(rad(ring[i].lat)) + rad(ring[i].lon) * Math.sin(rad(ring[j].lat));
-  }
-  return Math.abs((s / 2) * 6371000 * 6371000 * Math.cos(rad(lat)));
-}
 
 // ---------------------------------------------------------------- MNT
 
@@ -248,206 +198,6 @@ function poolFromTpi(e: number[]): { tpi: number | null; poolIndex: number } {
 
 // ---------------------------------------------------------------- Overpass
 
-interface OverpassNode {
-  lat: number;
-  lon: number;
-}
-interface OverpassElement {
-  type: string;
-  id: number;
-  tags?: Record<string, string>;
-  geometry?: OverpassNode[];
-  members?: { type: string; role?: string; geometry?: OverpassNode[] }[];
-}
-
-const OVERPASS_HOSTS = ["https://overpass-api.de/api/interpreter", "https://overpass.kumi.systems/api/interpreter"];
-
-const WATER_RADIUS = 1500;
-const FOREST_RADIUS = 600;
-
-function overpassQuery(lat: number, lon: number): string {
-  const p = (r: number) => `(around:${r},${lat.toFixed(5)},${lon.toFixed(5)})`;
-  return (
-    `[out:json][timeout:20][maxsize:2097152];(` +
-    `way["natural"="water"]${p(WATER_RADIUS)};` +
-    `way["waterway"~"^(river|stream|canal|ditch)$"]${p(WATER_RADIUS)};` +
-    `relation["natural"="water"]${p(WATER_RADIUS)};` +
-    `way["natural"="coastline"]${p(6000)};` +
-    `way["landuse"="forest"]${p(FOREST_RADIUS)};` +
-    `way["natural"="wood"]${p(FOREST_RADIUS)};` +
-    `);out tags geom;`
-  );
-}
-
-async function fetchOverpass(lat: number, lon: number, opts: RequestOptions): Promise<OverpassElement[]> {
-  // POST « simple » : pas de requête préliminaire CORS, et pas de limite de longueur d'URL.
-  const body = "data=" + encodeURIComponent(overpassQuery(lat, lon));
-  // Essai en parallèle sur tous les miroirs : le premier qui répond valide gagne.
-  // Timeout court (6 s) : un miroir mort ne doit pas figer le rendu.
-  const attempts = OVERPASS_HOSTS.map(async (url) => {
-    const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), 6_000);
-    const onAbort = () => ctrl.abort();
-    if (opts.signal) {
-      if (opts.signal.aborted) ctrl.abort();
-      else opts.signal.addEventListener("abort", onAbort, { once: true });
-    }
-    try {
-      const res = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body,
-        signal: ctrl.signal,
-      });
-      if (!res.ok) throw new HttpError("http", `HTTP ${res.status}`, res.status, (await res.text()).slice(0, 200));
-      const text = await res.text();
-      const j = JSON.parse(text) as { elements?: OverpassElement[]; remark?: string };
-      if (!j.elements) throw new HttpError("parse", "Réponse Overpass inattendue.");
-      if (j.remark && /rate limit|too many/i.test(j.remark)) throw new HttpError("http", "Overpass saturé", 429);
-      return j.elements;
-    } finally {
-      clearTimeout(timer);
-      opts.signal?.removeEventListener("abort", onAbort);
-    }
-  });
-  // Polyfill Promise.any (ES2021) pour cible ES2020.
-  return new Promise<OverpassElement[]>((resolve, reject) => {
-    let remaining = attempts.length;
-    const errors: unknown[] = [];
-    for (const p of attempts) {
-      p.then(
-        (v) => resolve(v),
-        (e) => {
-          errors.push(e);
-          if (--remaining === 0) {
-            const first = errors[0];
-            reject(first instanceof Error ? first : new HttpError("network", "Overpass injoignable"));
-          }
-        }
-      );
-    }
-  });
-}
-
-function waterSize(kind: WaterKind, tags: Record<string, string>, areaM2: number | null): number {
-  if (kind === "sea") return 1;
-  if (kind === "river") {
-    const w = parseFloat(tags.width ?? "");
-    if (Number.isFinite(w)) return clamp(Math.log10(1 + w) / Math.log10(1 + 400), 0.1, 1);
-    return 0.7;
-  }
-  if (kind === "canal") return 0.5;
-  if (kind === "stream") return 0.25;
-  if (kind === "pond") return 0.15;
-  // Lac : ampleur croissante avec la surface, saturée vers 5 km².
-  if (areaM2 === null) return 0.6;
-  return clamp(Math.log10(1 + areaM2 / 5000) / Math.log10(1 + 5_000_000 / 5000), 0.12, 1);
-}
-
-function classify(tags: Record<string, string>): WaterKind | null {
-  if (tags.natural === "coastline" || tags.natural === "sea") return "sea";
-  if (tags.natural === "water") {
-    const t = tags.water ?? tags["water:type"];
-    if (t === "river") return "river";
-    if (t === "stream") return "stream";
-    if (t === "canal") return "canal";
-    if (t === "pond") return "pond";
-    return "lake";
-  }
-  if (tags.waterway === "river") return "river";
-  if (tags.waterway === "stream") return "stream";
-  if (tags.waterway === "canal") return "canal";
-  if (tags.waterway === "ditch") return "stream";
-  return null;
-}
-
-const MAX_FEATURES = 260;
-const MAX_POINTS = 90;
-
-/** Réduit une géométrie à un nombre de points raisonnable, sans perdre sa forme. */
-function thin(nodes: OverpassNode[]): [number, number][] {
-  if (nodes.length <= MAX_POINTS) return nodes.map((p) => [p.lat, p.lon]);
-  const step = nodes.length / MAX_POINTS;
-  const out: [number, number][] = [];
-  for (let i = 0; i < MAX_POINTS; i++) {
-    const p = nodes[Math.min(nodes.length - 1, Math.round(i * step))];
-    out.push([p.lat, p.lon]);
-  }
-  const last = nodes[nodes.length - 1];
-  out.push([last.lat, last.lon]);
-  return out;
-}
-
-function analyseSurroundings(
-  lat: number,
-  lon: number,
-  elements: OverpassElement[]
-): { water: WaterFeature | null; forest: ForestCover | null; features: TerrainFeature[] } {
-  let water: WaterFeature | null = null;
-  let forestInside = false;
-  let forestNearest = Infinity;
-  const features: TerrainFeature[] = [];
-
-  const keep = (kind: TerrainFeature["kind"], closed: boolean, size: number, nodes: OverpassNode[]) => {
-    if (features.length >= MAX_FEATURES || nodes.length < 2) return;
-    features.push({ kind, closed, size, points: thin(nodes) });
-  };
-
-  const consider = (kind: WaterKind, tags: Record<string, string>, nodes: OverpassNode[], closed: boolean) => {
-    if (nodes.length < 2) return;
-    let best: { distanceM: number; bearing: number } | null = null;
-    for (let i = 0; i + 1 < nodes.length; i++) {
-      const d = distanceToSegment(lat, lon, nodes[i], nodes[i + 1]);
-      if (!best || d.distanceM < best.distanceM) best = d;
-    }
-    if (!best) return;
-    let distanceM = best.distanceM;
-    let areaM2: number | null = null;
-    if (closed && nodes.length > 3) {
-      const first = nodes[0];
-      const last = nodes[nodes.length - 1];
-      const ring = Math.abs(first.lat - last.lat) < 1e-9 && Math.abs(first.lon - last.lon) < 1e-9 ? nodes : [...nodes, first];
-      areaM2 = ringAreaM2(ring, lat);
-      if (pointInRing(lat, lon, ring)) distanceM = 0;
-    }
-    const size = waterSize(kind, tags, areaM2);
-    keep(kind, closed, size, nodes);
-    if (distanceM > WATER_RADIUS) return;
-    const candidate: WaterFeature = { kind, distanceM, bearing: best.bearing, size };
-    // Priorité au plan d'eau qui compte vraiment : l'ampleur d'abord, la proximité ensuite.
-    const better = !water || size > water.size + 0.15 || (size >= water.size - 0.15 && distanceM < water.distanceM);
-    if (better) water = candidate;
-  };
-
-  for (const el of elements) {
-    const tags = el.tags ?? {};
-    const kind = classify(tags);
-    if (el.type === "way" && el.geometry) {
-      const closed = el.geometry.length > 3 && tags.natural === "water";
-      if (kind) consider(kind, tags, el.geometry, closed);
-      if (tags.landuse === "forest" || tags.natural === "wood") {
-        keep("forest", true, 0.5, el.geometry);
-        if (closed && pointInRing(lat, lon, [...el.geometry, el.geometry[0]])) forestInside = true;
-        for (let i = 0; i + 1 < el.geometry.length; i++) {
-          const d = distanceToSegment(lat, lon, el.geometry[i], el.geometry[i + 1]).distanceM;
-          if (d < forestNearest) forestNearest = d;
-        }
-      }
-    } else if (el.type === "relation" && el.members) {
-      // Lacs décrits en plusieurs morceaux : on garde le segment le plus proche.
-      for (const m of el.members) if (m.geometry && kind) consider(kind, tags, m.geometry, false);
-    }
-  }
-
-  const forest: ForestCover | null =
-    Number.isFinite(forestNearest) || forestInside
-      ? { fraction: forestInside ? 1 : clamp(1 - forestNearest / FOREST_RADIUS, 0, 1) * 0.55, nearestM: forestInside ? 0 : forestNearest }
-      : null;
-
-  // Les grands plans d'eau d'abord : si la liste est tronquée, on garde l'essentiel.
-  features.sort((a, b) => b.size - a.size || (a.closed ? 1 : 0) - (b.closed ? 1 : 0));
-  return { water, forest, features: features.slice(0, MAX_FEATURES) };
-}
 
 // ---------------------------------------------------------------- collecte
 
@@ -480,12 +230,17 @@ export async function fetchTerrain(
     const notes: string[] = [];
     const stStencil = stations.slice(0, 3).flatMap((s) => ringStencil(s.lat, s.lon));
     const own = stencil(lat, lon);
-    // Relief et occupation du sol sont indépendants : les demander ensemble évite
-    // d'ajouter la latence de l'un à celle de l'autre (plusieurs secondes en 4G).
-    const [elevRes, osmRes] = await Promise.allSettled([
-      fetchElevations([...own, ...stStencil], opts),
-      fetchOverpass(lat, lon, opts),
-    ]);
+    // Relief (élévation) seul : l'occupation du sol (Overpass) est retirée
+    // car les deux miroirs publics sont en panne et le terrain se dessine
+    // sans landuse. Évite 12 s de requêtes mortes par chargement.
+    const elevRes = await (async () => {
+      try {
+        const v = await fetchElevations([...own, ...stStencil], opts);
+        return { status: "fulfilled" as const, value: v };
+      } catch (e) {
+        return { status: "rejected" as const, reason: e };
+      }
+    })();
 
     let point: TerrainPoint = { ...EMPTY_TERRAIN.point };
     const stationTerrain: TerrainInfo["stations"] = {};
@@ -510,16 +265,9 @@ export async function fetchTerrain(
     let water: WaterFeature | null = null;
     let forest: ForestCover | null = null;
     let foundFeatures: TerrainFeature[] = [];
-    if (osmRes.status === "fulfilled") {
-      const r = analyseSurroundings(lat, lon, osmRes.value);
-      water = r.water;
-      forest = r.forest;
-      foundFeatures = r.features;
-      if (!water && !forest) notes.push("Aucun plan d'eau ni zone boisée cartographiés à proximité.");
-    } else {
-      if (isAbort(osmRes.reason)) throw osmRes.reason;
-      notes.push("Carte des alentours (OpenStreetMap) inaccessible : eau et végétation ignorées.");
-    }
+    // Occupation du sol (Overpass) désactivée : les miroirs publics sont en
+    // panne et le terrain se dessine sans landuse. Aucune requête réseau.
+    notes.push("Carte des alentours (OpenStreetMap) non chargée : eau et végétation ignorées.");
 
     const info: TerrainInfo = {
       point,

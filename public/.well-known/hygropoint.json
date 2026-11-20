@@ -1,0 +1,10 @@
+{
+  "name": "HygroPoint",
+  "url": "https://labo.bissestudio.ch/",
+  "kind": "interactive-web-app",
+  "inputs": ["lat", "lon"],
+  "outputs": ["relative_humidity_pct", "temperature_c", "dew_point_c", "pressure_hpa", "wind_kmh", "precipitation_mm"],
+  "horizon": {"history_h": 24, "forecast_h": 72},
+  "languages": ["fr", "en"],
+  "sources": ["Open-Meteo", "ASOS/METAR mesonet", "Copernicus DEM 90 m", "OpenStreetMap"]
+}

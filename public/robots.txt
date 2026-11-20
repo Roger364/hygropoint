@@ -1,4 +1,6 @@
 User-agent: *
 Allow: /
 
+Agentmap: https://labo.bissestudio.ch/.well-known/ard.json
+
 # HygroPoint — pas de sitemap pour l'instant (SPA monopage).

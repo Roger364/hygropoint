@@ -1,9 +1,18 @@
 {
-  "name": "Labo — HygroPoint",
-  "description": "Station météo personnelle : humidité relative, pression, point de rosée, vent et précipitations pour un point choisi sur la carte. Données en temps réel depuis les stations de mesure les plus proches et les modèles météo ouverts.",
-  "url": "https://labo.bissestudio.ch",
-  "version": "1.0",
-  "capabilities": ["weather", "forecast", "humidity", "pressure", "wind", "precipitation", "terrain-3d"],
-  "languages": ["fr", "en"],
-  "contact": "https://bissestudio.ch"
+  "specVersion": "1.0",
+  "entries": [
+    {
+      "identifier": "urn:air:bissestudio.ch:web:hygropoint",
+      "displayName": "HygroPoint — humidité relative par point",
+      "type": "application/vnd.bissestudio.hygropoint+json",
+      "url": "https://labo.bissestudio.ch/.well-known/hygropoint.json",
+      "description": "Application météo qui donne l'humidité relative, la température, le point de rosée, la pression, le vent et les précipitations pour un point précis désigné sur une carte, avec 24 h d'historique et 72 h de prévision horaire.",
+      "capabilities": ["CurrentConditions", "HourlyForecast", "Terrain3D"],
+      "representativeQueries": [
+        "quelle est l'humidité relative à Paris en ce moment",
+        "humidité et point de rosée prévus demain à Lyon",
+        "conditions et relief autour d'un point précis en France"
+      ]
+    }
+  ]
 }
