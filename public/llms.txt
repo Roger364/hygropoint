@@ -1,0 +1,20 @@
+# Labo — HygroPoint
+
+> Station météo personnelle : humidité relative, pression, point de rosée, vent et précipitations, pour un point choisi sur la carte. Données en temps réel depuis les stations de mesure les plus proches et les modèles météo ouverts.
+
+## Pages
+
+- [Accueil](https://labo.bissestudio.ch/) : carte interactive, conditions actuelles, prévisions 72 h, évolution 24 h/72 h, détail heure par heure.
+- [Sources de données](https://labo.bissestudio.ch/#sources) : liste des services météo utilisés (Open-Meteo, stations ASOS/METAR, mesonet).
+
+## Données et API
+
+- Humidité relative, température, pression, point de rosée, vent, précipitations.
+- Prévisions horaires sur 72 h, historique sur 24 h.
+- Relief 3D (Copernicus 90 m) et occupation du sol (OpenStreetMap).
+- Données issues de services météo ouverts (Open-Meteo, stations ASOS).
+
+## Contact
+
+- Site : https://labo.bissestudio.ch
+- Auteur : Bisse Studio (bissestudio.ch)

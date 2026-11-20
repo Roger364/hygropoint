@@ -1,0 +1,9 @@
+{
+  "name": "Labo — HygroPoint",
+  "description": "Station météo personnelle : humidité relative, pression, point de rosée, vent et précipitations pour un point choisi sur la carte. Données en temps réel depuis les stations de mesure les plus proches et les modèles météo ouverts.",
+  "url": "https://labo.bissestudio.ch",
+  "version": "1.0",
+  "capabilities": ["weather", "forecast", "humidity", "pressure", "wind", "precipitation", "terrain-3d"],
+  "languages": ["fr", "en"],
+  "contact": "https://bissestudio.ch"
+}
