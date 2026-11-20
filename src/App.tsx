@@ -8,13 +8,15 @@ import SearchBar from "./components/SearchBar";
 import TerrainCard from "./components/TerrainCard";
 import TimelineChart from "./components/TimelineChart";
 import VerdictCard from "./components/VerdictCard";
-import { useHumidity, type Place } from "./hooks/useHumidity";
+import { useHumidity, type Place, type EstimationCore } from "./hooks/useHumidity";
 import { computeEstimate, rhColor, type EstimateResult, type HourEstimate, type LearnedBias } from "./lib/estimate";
 import { runRetrospective, type Retrospective } from "./lib/retrospective";
 import { DEFAULT_TUNE, isDefaultTune, type Tune } from "./lib/tune";
 import { fmtAgo, fmtCoord, fmtDayShort, fmtFull, fmtHour, localDayKey } from "./lib/format";
 import { haversineKm, type ReverseResult } from "./lib/geo";
+import { EMPTY_TERRAIN, type TerrainInfo } from "./lib/terrain";
 import { cn } from "./utils/cn";
+import type { ModelData } from "./lib/openmeteo";
 
 const Terrain3D = lazy(() => import("./components/Terrain3D"));
 
@@ -103,10 +105,19 @@ export default function App() {
     }
   }, [core, terrain, deferredTune, loaded, learned]);
   const [staleResult, setStaleResult] = useState<EstimateResult | null>(null);
+  const [stalePoint, setStalePoint] = useState<ModelData | null>(null);
+  const [staleCore, setStaleCore] = useState<EstimationCore | null>(null);
+  const [staleTerrain, setStaleTerrain] = useState<TerrainInfo | null>(null);
   useEffect(() => {
     if (result) setStaleResult(result);
-  }, [result]);
+    if (point) setStalePoint(point);
+    if (core) setStaleCore(core);
+    if (terrain) setStaleTerrain(terrain);
+  }, [result, point, core, terrain]);
   const displayResult = result ?? staleResult;
+  const displayPoint = point ?? stalePoint;
+  const displayCore = core ?? staleCore;
+  const displayTerrain = terrain ?? staleTerrain ?? EMPTY_TERRAIN;
   const baseline = useMemo(() => {
     if (!core || isDefaultTune(deferredTune)) return null;
     try {
@@ -375,9 +386,9 @@ export default function App() {
             </div>
           </div>
 
-          {result && point && (
-            <>
-              {days.length > 0 && (
+          {displayResult && displayPoint && (
+              <>
+                {days.length > 0 && (
                 <ul aria-label="Synthèse par journée" className={cn("grid grid-cols-2 gap-3", days.length >= 4 ? "md:grid-cols-4" : "md:grid-cols-3")}>
                   {days.map((d) => (
                     <li key={d.key} className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 backdrop-blur-xl">
@@ -426,7 +437,7 @@ export default function App() {
                 report={retro}
                 busy={retroBusy}
                 error={retroError}
-                disabled={!core?.stations.length}
+                disabled={!displayCore?.stations.length}
                 onRun={() => void comparePast()}
               /></div>
 
@@ -440,31 +451,31 @@ export default function App() {
                   </div>
                 }>
                   <Terrain3D
-                  lat={place.lat}
-                  lon={place.lon}
-                  features={terrain.features}
-                  stations={reliefStations}
-                  nowMs={result.computedAt}
-                  tz={tz}
-                  onPick={pickOnMap}
-                  tune={tune}
-                  onTune={setTune}
-                  deltaRh={baseline ? result.now.rh - baseline.now.rh : 0}
-                  deltaSigma={baseline ? result.now.sigma - baseline.now.sigma : 0}
-                  rhNow={result.now.rh}
-                />
+                    lat={place.lat}
+                    lon={place.lon}
+                    features={displayTerrain.features}
+                    stations={reliefStations}
+                    nowMs={displayResult.computedAt}
+                    tz={tz}
+                    onPick={pickOnMap}
+                    tune={tune}
+                    onTune={setTune}
+                    deltaRh={baseline ? displayResult.now.rh - baseline.now.rh : 0}
+                    deltaSigma={baseline ? displayResult.now.sigma - baseline.now.sigma : 0}
+                    rhNow={displayResult.now.rh}
+                  />
                 </Suspense>
               </ErrorBoundary>
 
               <ErrorBoundary label="Le graphique">
-                <TimelineChart hours={result.hours} now={result.now} station={stations[0] ?? null} members={result.members} tz={tz} />
+                <TimelineChart hours={displayResult.hours} now={displayResult.now} station={stations[0] ?? null} members={displayResult.members} tz={tz} />
               </ErrorBoundary>
 
               <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_380px]">
-                <HourlyTable result={result} tz={tz} />
+                <HourlyTable result={displayResult} tz={tz} />
                 <div className="flex flex-col gap-5">
-                  <TerrainCard result={result} terrain={terrain} tune={tune} />
-                  <VerdictCard result={result} point={point} />
+                  <TerrainCard result={displayResult} terrain={displayTerrain} tune={tune} />
+                  <VerdictCard result={displayResult} point={displayPoint} />
                 </div>
               </div>
             </>
