@@ -1,10 +1,12 @@
 import { lazy, Suspense, useCallback, useDeferredValue, useEffect, useMemo, useState } from "react";
 import ErrorBoundary from "./components/ErrorBoundary";
+import HourlyTable from "./components/HourlyTable";
 import MapPicker from "./components/MapPicker";
 import NowCard from "./components/NowCard";
 import RetrospectiveCard from "./components/RetrospectiveCard";
 import SearchBar from "./components/SearchBar";
 import TerrainCard from "./components/TerrainCard";
+import TimelineChart from "./components/TimelineChart";
 import VerdictCard from "./components/VerdictCard";
 import { useHumidity, type Place, type EstimationCore } from "./hooks/useHumidity";
 import { computeEstimate, rhColor, type EstimateResult, type HourEstimate, type LearnedBias } from "./lib/estimate";
@@ -17,8 +19,6 @@ import { cn } from "./utils/cn";
 import type { ModelData } from "./lib/openmeteo";
 
 const Terrain3D = lazy(() => import("./components/Terrain3D"));
-const TimelineChart = lazy(() => import("./components/TimelineChart"));
-const HourlyTable = lazy(() => import("./components/HourlyTable"));
 
 const STORAGE_KEY = "hygropoint.place";
 const LEGACY_KEY = "hr-place";
@@ -536,15 +536,11 @@ export default function App() {
               </ErrorBoundary>
 
               <ErrorBoundary label="Le graphique">
-                <Suspense fallback={<div className="h-40 animate-pulse rounded-xl bg-slate-800/50" />}>
-                  <TimelineChart hours={displayResult.hours} now={displayResult.now} station={stations[0] ?? null} members={displayResult.members} tz={tz} />
-                </Suspense>
+                <TimelineChart hours={displayResult.hours} now={displayResult.now} station={stations[0] ?? null} members={displayResult.members} tz={tz} />
               </ErrorBoundary>
 
               <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_380px]">
-                <Suspense fallback={<div className="h-60 animate-pulse rounded-xl bg-slate-800/50" />}>
-                  <HourlyTable result={displayResult} tz={tz} />
-                </Suspense>
+                <HourlyTable result={displayResult} tz={tz} />
                 <div className="flex flex-col gap-5">
                   <TerrainCard result={displayResult} terrain={displayTerrain} tune={tune} />
                   <VerdictCard result={displayResult} point={displayPoint} />
