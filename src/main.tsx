@@ -30,6 +30,24 @@ if (location.search.includes("clsdebug")) {
       }));
     });
   }).observe({ type: "layout-shift", buffered: true });
+
+  new PerformanceObserver((list) => {
+    list.getEntries().forEach((e) => {
+      const lcp = e as PerformanceEntry & { size?: number; url?: string; element?: Element | null };
+      const el = lcp.element;
+      console.error("LCPDBG " + JSON.stringify({
+        t: Math.round(e.startTime),
+        size: lcp.size ?? null,
+        url: lcp.url || null,
+        sel: el ? el.tagName + "." + String(el.className || "").slice(0, 60) : null,
+        top: el ? Math.round(el.getBoundingClientRect().top) : null,
+        h: el ? Math.round(el.getBoundingClientRect().height) : null,
+        txt: el ? (el as HTMLElement).innerText?.slice(0, 40) ?? null : null,
+        vh: window.innerHeight,
+        scrollY: Math.round(window.scrollY),
+      }));
+    });
+  }).observe({ type: "largest-contentful-paint", buffered: true });
 }
 
 createRoot(document.getElementById("root")!).render(
