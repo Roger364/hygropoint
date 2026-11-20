@@ -282,40 +282,51 @@ function overpassQuery(lat: number, lon: number): string {
 async function fetchOverpass(lat: number, lon: number, opts: RequestOptions): Promise<OverpassElement[]> {
   // POST « simple » : pas de requête préliminaire CORS, et pas de limite de longueur d'URL.
   const body = "data=" + encodeURIComponent(overpassQuery(lat, lon));
-  let last: unknown = null;
-  for (const url of OVERPASS_HOSTS) {
+  // Essai en parallèle sur tous les miroirs : le premier qui répond valide gagne.
+  // Timeout court (6 s) : un miroir mort ne doit pas figer le rendu.
+  const attempts = OVERPASS_HOSTS.map(async (url) => {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 6_000);
+    const onAbort = () => ctrl.abort();
+    if (opts.signal) {
+      if (opts.signal.aborted) ctrl.abort();
+      else opts.signal.addEventListener("abort", onAbort, { once: true });
+    }
     try {
-      const ctrl = new AbortController();
-      const timer = setTimeout(() => ctrl.abort(), 12_000);
-      const onAbort = () => ctrl.abort();
-      if (opts.signal) {
-        if (opts.signal.aborted) ctrl.abort();
-        else opts.signal.addEventListener("abort", onAbort, { once: true });
-      }
-      let text: string;
-      try {
-        const res = await fetch(url, {
-          method: "POST",
-          headers: { "Content-Type": "application/x-www-form-urlencoded" },
-          body,
-          signal: ctrl.signal,
-        });
-        if (!res.ok) throw new HttpError("http", `HTTP ${res.status}`, res.status, (await res.text()).slice(0, 200));
-        text = await res.text();
-      } finally {
-        clearTimeout(timer);
-        opts.signal?.removeEventListener("abort", onAbort);
-      }
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body,
+        signal: ctrl.signal,
+      });
+      if (!res.ok) throw new HttpError("http", `HTTP ${res.status}`, res.status, (await res.text()).slice(0, 200));
+      const text = await res.text();
       const j = JSON.parse(text) as { elements?: OverpassElement[]; remark?: string };
       if (!j.elements) throw new HttpError("parse", "Réponse Overpass inattendue.");
       if (j.remark && /rate limit|too many/i.test(j.remark)) throw new HttpError("http", "Overpass saturé", 429);
       return j.elements;
-    } catch (e) {
-      if (e instanceof HttpError && e.kind === "aborted") throw e;
-      last = e;
+    } finally {
+      clearTimeout(timer);
+      opts.signal?.removeEventListener("abort", onAbort);
     }
-  }
-  throw last instanceof Error ? last : new HttpError("network", "Overpass injoignable");
+  });
+  // Polyfill Promise.any (ES2021) pour cible ES2020.
+  return new Promise<OverpassElement[]>((resolve, reject) => {
+    let remaining = attempts.length;
+    const errors: unknown[] = [];
+    for (const p of attempts) {
+      p.then(
+        (v) => resolve(v),
+        (e) => {
+          errors.push(e);
+          if (--remaining === 0) {
+            const first = errors[0];
+            reject(first instanceof Error ? first : new HttpError("network", "Overpass injoignable"));
+          }
+        }
+      );
+    }
+  });
 }
 
 function waterSize(kind: WaterKind, tags: Record<string, string>, areaM2: number | null): number {

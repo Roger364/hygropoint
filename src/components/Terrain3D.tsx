@@ -223,6 +223,27 @@ export default function Terrain3D({ lat, lon, features, stations, nowMs, tz, onP
     io.observe(el);
     return () => io.disconnect();
   }, [near]);
+  // Fallback : si l'observateur ne se déclenche pas (onglet masqué, remount),
+  // charger quand même après l'idle ou au bout de 2 s.
+  useEffect(() => {
+    if (near) return;
+    let cancelled = false;
+    const trigger = () => { if (!cancelled) setNear(true); };
+    let handle: number | ReturnType<typeof setTimeout>;
+    if (typeof requestIdleCallback === "function") {
+      handle = requestIdleCallback(trigger, { timeout: 2000 });
+    } else {
+      handle = setTimeout(trigger, 2000);
+    }
+    return () => {
+      cancelled = true;
+      if (typeof requestIdleCallback === "function" && typeof handle === "number") {
+        cancelIdleCallback(handle as number);
+      } else {
+        clearTimeout(handle as ReturnType<typeof setTimeout>);
+      }
+    };
+  }, [near]);
 
   // MNT : rechargé si le lieu bouge de plus de ~150 m ou si la résolution change.
   const gridLat = useMemo(() => Math.round(lat * 64) / 64, [lat]);
