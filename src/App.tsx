@@ -363,7 +363,7 @@ export default function App() {
           </div>
         )}
 
-        <main className={cn("flex flex-col gap-5 transition-opacity", loading && displayResult && "opacity-70")} aria-busy={loading}>
+        <main className={cn("flex flex-col gap-5 transition-opacity", loading && displayResult && "opacity-70", "lg:min-h-[3400px]")} aria-busy={loading}>
           <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_380px]">
             {displayResult ? (
               <NowCard result={displayResult} placeLabel={place.label} clock={clock} />

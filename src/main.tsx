@@ -10,6 +10,7 @@ if (location.search.includes("clsdebug")) {
     l.getEntries().forEach((e) => {
       const ls = e as PerformanceEntry & { value?: number; hadRecentInput?: boolean; sources?: Array<{ node?: Element; previousRect: DOMRectReadOnly; currentRect: DOMRectReadOnly }> };
       if (!ls.value || ls.hadRecentInput) return;
+      const main = document.querySelector("main");
       console.error("CLSDBG " + JSON.stringify({
         t: Math.round(e.startTime),
         v: +ls.value.toFixed(3),
@@ -20,6 +21,12 @@ if (location.search.includes("clsdebug")) {
           curTop: Math.round(s.currentRect.top),
           curH: Math.round(s.currentRect.height),
         })),
+        ctx: {
+          mainKids: main?.childElementCount ?? null,
+          mainH: main ? Math.round(main.getBoundingClientRect().height) : null,
+          screens: document.querySelectorAll(".min-h-screen").length,
+          txt: (main?.innerText || "").slice(0, 80),
+        },
       }));
     });
   }).observe({ type: "layout-shift", buffered: true });
