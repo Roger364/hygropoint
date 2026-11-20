@@ -9,7 +9,7 @@ import TerrainCard from "./components/TerrainCard";
 import TimelineChart from "./components/TimelineChart";
 import VerdictCard from "./components/VerdictCard";
 import { useHumidity, type Place } from "./hooks/useHumidity";
-import { computeEstimate, rhColor, type HourEstimate, type LearnedBias } from "./lib/estimate";
+import { computeEstimate, rhColor, type EstimateResult, type HourEstimate, type LearnedBias } from "./lib/estimate";
 import { runRetrospective, type Retrospective } from "./lib/retrospective";
 import { DEFAULT_TUNE, isDefaultTune, type Tune } from "./lib/tune";
 import { fmtAgo, fmtCoord, fmtDayShort, fmtFull, fmtHour, localDayKey } from "./lib/format";
@@ -102,6 +102,11 @@ export default function App() {
       return loaded;
     }
   }, [core, terrain, deferredTune, loaded, learned]);
+  const [staleResult, setStaleResult] = useState<EstimateResult | null>(null);
+  useEffect(() => {
+    if (result) setStaleResult(result);
+  }, [result]);
+  const displayResult = result ?? staleResult;
   const baseline = useMemo(() => {
     if (!core || isDefaultTune(deferredTune)) return null;
     try {
@@ -347,10 +352,10 @@ export default function App() {
           </div>
         )}
 
-        <main className={cn("flex flex-col gap-5 transition-opacity", loading && result && "opacity-70")} aria-busy={loading}>
+        <main className={cn("flex flex-col gap-5 transition-opacity", loading && displayResult && "opacity-70")} aria-busy={loading}>
           <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_380px]">
-            {result ? (
-              <NowCard result={result} placeLabel={place.label} clock={clock} />
+            {displayResult ? (
+              <NowCard result={displayResult} placeLabel={place.label} clock={clock} />
             ) : (
               <div className="hp-now-fallback flex min-h-[420px] items-center justify-center rounded-3xl border border-white/10 bg-white/[0.04] p-6 text-sm text-slate-400 lg:min-h-[440px]">
                 {error ? (
@@ -427,7 +432,7 @@ export default function App() {
 
               <ErrorBoundary label="La carte en relief">
                 <Suspense fallback={
-                  <div className="flex min-h-96 items-center justify-center rounded-3xl border border-white/10 bg-white/[0.04]">
+                  <div className="flex min-h-[440px] items-center justify-center rounded-3xl border border-white/10 bg-white/[0.04]">
                     <span className="flex items-center gap-3 text-sm text-slate-400">
                       <span aria-hidden="true" className="h-5 w-5 animate-spin rounded-full border-2 border-slate-600 border-t-sky-300" />
                       Chargement du relief 3D…
