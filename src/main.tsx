@@ -44,11 +44,11 @@ import ErrorBoundary from "./components/ErrorBoundary";
       clsEntries.push({ t: ls.startTime, v: ls.value });
       // Recalculer le CLS = max session sur 5 s.
       let maxSession = 0;
-      let sessionStart = 0;
+      let sessionStart = -1;
       let sessionValue = 0;
       let lastEntry = 0;
       for (const entry of clsEntries) {
-        if (sessionStart === 0 || entry.t - sessionStart > 5000 || entry.t - lastEntry > 1000) {
+        if (sessionStart === -1 || entry.t - sessionStart > 5000 || entry.t - lastEntry > 1000) {
           // Nouvelle session (gap > 1 s d'inactivité ou > 5 s depuis le début).
           maxSession = Math.max(maxSession, sessionValue);
           sessionStart = entry.t;
