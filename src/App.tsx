@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useDeferredValue, useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import ErrorBoundary from "./components/ErrorBoundary";
 import HourlyTable from "./components/HourlyTable";
 import MapPicker from "./components/MapPicker";
@@ -104,6 +104,23 @@ export default function App() {
       return loaded;
     }
   }, [core, terrain, deferredTune, loaded, learned]);
+  const [showTerrain3D, setShowTerrain3D] = useState(false);
+  const terrainPlaceholderRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = terrainPlaceholderRef.current;
+    if (!el || showTerrain3D) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          setShowTerrain3D(true);
+          io.disconnect();
+        }
+      },
+      { rootMargin: "200px" }
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [showTerrain3D]);
   const [staleResult, setStaleResult] = useState<EstimateResult | null>(null);
   const [stalePoint, setStalePoint] = useState<ModelData | null>(null);
   const [staleCore, setStaleCore] = useState<EstimationCore | null>(null);
@@ -442,6 +459,7 @@ export default function App() {
               /></div>
 
               <ErrorBoundary label="La carte en relief">
+                {showTerrain3D ? (
                 <Suspense fallback={
                   <div className="flex min-h-[440px] items-center justify-center rounded-3xl border border-white/10 bg-white/[0.04]">
                     <span className="flex items-center gap-3 text-sm text-slate-400">
@@ -465,6 +483,17 @@ export default function App() {
                     rhNow={displayResult.now.rh}
                   />
                 </Suspense>
+              ) : (
+                <div
+                  ref={terrainPlaceholderRef}
+                  className="flex min-h-[440px] items-center justify-center rounded-3xl border border-white/10 bg-white/[0.04]"
+                >
+                  <span className="flex items-center gap-3 text-sm text-slate-400">
+                    <span aria-hidden="true" className="h-5 w-5 animate-spin rounded-full border-2 border-slate-600 border-t-sky-300" />
+                    Chargement du relief 3D…
+                  </span>
+                </div>
+              )}
               </ErrorBoundary>
 
               <ErrorBoundary label="Le graphique">
