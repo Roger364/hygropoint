@@ -366,7 +366,7 @@ export default function App() {
         <p role="status" className="sr-only">
           {loading ? "Actualisation en cours" : error ? "Échec de la dernière actualisation" : result ? "Données à jour" : ""}
         </p>
-        <p className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-400">
+        <p className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-400 min-h-[3.5rem] sm:min-h-0">
           <span className="flex items-center gap-1.5 text-slate-300">
             <span
               aria-hidden="true"
