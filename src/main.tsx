@@ -8,6 +8,19 @@ import ErrorBoundary from "./components/ErrorBoundary";
 // Envoi unique par page via sendBeacon à la fermeture (visibilitychange → hidden).
 // Aucune coordonnée, aucun identifiant, aucun cookie.
 (() => {
+  // Marquage self : ?self=1 pose le drapeau puis s'efface de l'URL.
+  try {
+    const params = new URLSearchParams(location.search);
+    if (params.get("self") === "1") {
+      localStorage.setItem("rum-self", "1");
+      params.delete("self");
+      const qs = params.toString();
+      history.replaceState(null, "", location.pathname + (qs ? "?" + qs : "") + location.hash);
+    }
+  } catch {
+    // localStorage indisponible (navigation privée) — on ignore.
+  }
+
   let cls = 0;
   let lcp = 0;
   let inp = 0;
@@ -17,6 +30,12 @@ import ErrorBoundary from "./components/ErrorBoundary";
   const send = () => {
     if (sent) return;
     sent = true;
+    let self = 0;
+    try {
+      self = localStorage.getItem("rum-self") === "1" ? 1 : 0;
+    } catch {
+      self = 0;
+    }
     const payload = JSON.stringify({
       path: location.pathname,
       cls: +cls.toFixed(4),
@@ -24,6 +43,9 @@ import ErrorBoundary from "./components/ErrorBoundary";
       inp: Math.round(inp),
       ttfb: Math.round(ttfb),
       ts: Date.now(),
+      self,
+      vw: window.innerWidth,
+      conn: (navigator as any).connection?.effectiveType ?? null,
     });
     if (navigator.sendBeacon) {
       navigator.sendBeacon("/api/vitals", new Blob([payload], { type: "application/json" }));

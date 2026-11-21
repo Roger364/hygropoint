@@ -10,9 +10,14 @@ interface VitalsPayload {
   inp?: number;
   ttfb?: number;
   ts?: number;
+  self?: number;
+  vw?: number;
+  conn?: string | null;
 }
 
-const ALLOWED_KEYS = new Set(["path", "cls", "lcp", "inp", "ttfb", "ts"]);
+const ALLOWED_KEYS = new Set(["path", "cls", "lcp", "inp", "ttfb", "ts", "self", "vw", "conn"]);
+
+const CONN_WHITELIST = new Set(["slow-2g", "2g", "3g", "4g"]);
 
 export const onRequestPost = async (context: any): Promise<Response> => {
   try {
@@ -66,6 +71,19 @@ export const onRequestPost = async (context: any): Promise<Response> => {
     if (body.ttfb !== undefined && (typeof body.ttfb !== "number" || !isFinite(body.ttfb))) {
       return new Response("bad request", { status: 400 });
     }
+    if (body.self !== undefined && body.self !== 0 && body.self !== 1) {
+      return new Response("bad request", { status: 400 });
+    }
+    if (body.vw !== undefined && body.vw !== null) {
+      if (typeof body.vw !== "number" || !Number.isInteger(body.vw) || body.vw < 100 || body.vw > 5000) {
+        return new Response("bad request", { status: 400 });
+      }
+    }
+    if (body.conn !== undefined && body.conn !== null) {
+      if (typeof body.conn !== "string" || !CONN_WHITELIST.has(body.conn)) {
+        return new Response("bad request", { status: 400 });
+      }
+    }
     if (body.path !== undefined && typeof body.path !== "string") {
       return new Response("bad request", { status: 400 });
     }
@@ -117,7 +135,7 @@ export const onRequestPost = async (context: any): Promise<Response> => {
     // Stockage D1.
     await db
       .prepare(
-        "INSERT INTO vitals (path, cls, lcp, inp, ttfb, ts) VALUES (?, ?, ?, ?, ?, ?)"
+        "INSERT INTO vitals (path, cls, lcp, inp, ttfb, ts, self, vw, conn) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
       )
       .bind(
         path,
@@ -125,7 +143,10 @@ export const onRequestPost = async (context: any): Promise<Response> => {
         typeof body.lcp === "number" ? Math.round(body.lcp) : null,
         typeof body.inp === "number" ? Math.round(body.inp) : null,
         typeof body.ttfb === "number" ? Math.round(body.ttfb) : null,
-        typeof body.ts === "number" ? body.ts : Date.now()
+        typeof body.ts === "number" ? body.ts : Date.now(),
+        body.self === 1 ? 1 : 0,
+        typeof body.vw === "number" ? Math.round(body.vw) : null,
+        typeof body.conn === "string" ? body.conn : null
       )
       .run();
 
