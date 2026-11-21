@@ -26,6 +26,11 @@ import ErrorBoundary from "./components/ErrorBoundary";
   let inp = 0;
   let ttfb = 0;
   let sent = false;
+  let clsTop: string | null = null;
+  let clsTopMax = 0;
+
+  const describe = (n: Element | null): string | null =>
+    !n ? null : n.tagName + (n.classList?.length ? "." + [...n.classList].slice(0, 2).join(".") : "");
 
   const send = () => {
     if (sent) return;
@@ -46,6 +51,7 @@ import ErrorBoundary from "./components/ErrorBoundary";
       self,
       vw: window.innerWidth,
       conn: (navigator as any).connection?.effectiveType ?? null,
+      cls_top: clsTop,
     });
     if (navigator.sendBeacon) {
       navigator.sendBeacon("/api/vitals", new Blob([payload], { type: "application/json" }));
@@ -61,8 +67,13 @@ import ErrorBoundary from "./components/ErrorBoundary";
   const clsEntries: Array<{ t: number; v: number }> = [];
   new PerformanceObserver((l) => {
     l.getEntries().forEach((e) => {
-      const ls = e as PerformanceEntry & { value?: number; hadRecentInput?: boolean };
+      const ls = e as PerformanceEntry & { value?: number; hadRecentInput?: boolean; sources?: Array<{ node?: Element }> };
       if (!ls.value || ls.hadRecentInput) return;
+      // Mémoriser la source de la plus grosse entrée isolée.
+      if (ls.value > clsTopMax) {
+        clsTopMax = ls.value;
+        clsTop = describe(ls.sources?.[0]?.node ?? null);
+      }
       clsEntries.push({ t: ls.startTime, v: ls.value });
       // Recalculer le CLS = max session sur 5 s.
       let maxSession = 0;

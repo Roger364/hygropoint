@@ -13,9 +13,10 @@ interface VitalsPayload {
   self?: number;
   vw?: number;
   conn?: string | null;
+  cls_top?: string | null;
 }
 
-const ALLOWED_KEYS = new Set(["path", "cls", "lcp", "inp", "ttfb", "ts", "self", "vw", "conn"]);
+const ALLOWED_KEYS = new Set(["path", "cls", "lcp", "inp", "ttfb", "ts", "self", "vw", "conn", "cls_top"]);
 
 const CONN_WHITELIST = new Set(["slow-2g", "2g", "3g", "4g"]);
 
@@ -84,6 +85,11 @@ export const onRequestPost = async (context: any): Promise<Response> => {
         return new Response("bad request", { status: 400 });
       }
     }
+    if (body.cls_top !== undefined && body.cls_top !== null) {
+      if (typeof body.cls_top !== "string" || !/^[A-Za-z0-9#._:/-]{1,80}$/.test(body.cls_top)) {
+        return new Response("bad request", { status: 400 });
+      }
+    }
     if (body.path !== undefined && typeof body.path !== "string") {
       return new Response("bad request", { status: 400 });
     }
@@ -135,7 +141,7 @@ export const onRequestPost = async (context: any): Promise<Response> => {
     // Stockage D1.
     await db
       .prepare(
-        "INSERT INTO vitals (path, cls, lcp, inp, ttfb, ts, self, vw, conn) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+        "INSERT INTO vitals (path, cls, lcp, inp, ttfb, ts, self, vw, conn, cls_top) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
       )
       .bind(
         path,
@@ -146,7 +152,8 @@ export const onRequestPost = async (context: any): Promise<Response> => {
         typeof body.ts === "number" ? body.ts : Date.now(),
         body.self === 1 ? 1 : 0,
         typeof body.vw === "number" ? Math.round(body.vw) : null,
-        typeof body.conn === "string" ? body.conn : null
+        typeof body.conn === "string" ? body.conn : null,
+        typeof body.cls_top === "string" ? body.cls_top : null
       )
       .run();
 
